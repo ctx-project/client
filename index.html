@@ -1,6 +1,12 @@
 <script src="node_modules/connection/index.js"></script>
 <script src="node_modules/samsarajs/dist/samsara.min.js "></script>
 <link rel="stylesheet" type="text/css" href="node_modules/samsarajs/dist/samsara.css"/>
+<!--https://github.com/jakesgordon/bin-packing-->
+<script src="modules/bin-packing/js/packer.js"></script>
+<script src="modules/bin-packing/js/packer.growing.js"></script>
+<script>var viewers = []</script>
+<script src="plugins/outline.viewer.js"></script>
+<script src="plugins/map.viewer.js"></script>
 
 <body></body>
 
@@ -21,7 +27,11 @@
 			conn = new CtxConnection(base, user),
 			rootCtx = conn.root,
 			view = '*View.1',
-			ctxs = [];
+			ctxs = [],
+			panels = [],
+			content, 
+			margin = 10,
+			barHeight = 26;
 	
 	GenericInput.register({
 		 mouse : MouseInput,
@@ -29,6 +39,8 @@
 	});
 	
 	context.mount(document.body);
+	content = context.add({margins: [margin, 2 * barHeight], origin: [1, .5], align: [1, .5]});
+	// content = context.add({});
 			
 	rootCtx.get(view, text => {
 		var viewTexts = text.split('\n'),
@@ -47,17 +59,164 @@
 		return text.split(' ').filter(w => w[0] != '*' && w[0] != '~').join(' ');
 	}
 	
-	var pix = 0;
 	function addPanel(text, ctx) {
-		var p = document.createElement("panel");
-		if(ctx.text=="Otelo") p.style = "background-color: #4527A0;";
-		p.innerHTML = `<header>${ctx.text}</header><div><li>${text.split('\n').map(t => t.replace(/\s*~\d*\s*$/, '')).join('</li><li>')}</li></div>`;
-		// document.body.appendChild(p);
-		var s = new Surface({margins: [12, 12]});
-		s.setContent(p);
-		context.add({proportions: [.25, 1], align: [.25 * pix++, 0] }).add(s);
+		var lines = text.split('\n').map(t => t.replace(/\s*~\d*\s*$/, '')),
+				p = document.createElement("panel"),
+				isMain = ctx.text == "Otelo",
+				isImportant = ctx.text == "Important";
+
+		// if(isMain) p.style = "background-color: #4527A0;";
+		// else if(isImportant) p.style = "background-color: #EC407A;";
+
+		p.className = 'contain';
+		p.innerHTML = `<header>${ctx.text}</header><div><li>${lines.join('</li><li>')}</li></div>`;
+
+		var surf = new Surface(),
+				proportions = new Transitionable([1, 1]),
+				align = new Transitionable([0, 0]),
+				margins = [margin, margin],
+				node = {proportions, align, margins},
+				input = new GenericInput();
+		
+		surf.setContent(p);
+		content.add(node).add(surf);
+		input.subscribe(surf);
+		input.map(data => console.log(data));
+		
+		var panel = {node, w: reqW(lines) + .16, h: reqH(lines) + .16, isMain, isImportant};
+		panel.p = panel;
+		panels.push(panel);
+		
+		dlayout();
 	}
 	
+	function removePanel(e) {
+		e.path.find(s => s.index !== undefined);
+	}
+	
+	function reqW(lines) {
+		return Math.ceil(lines.map(l => l.length).reduce((a,b) => Math.max(a, b)) / 10 + 1);
+	}
+	
+	function reqH(lines) {
+		return Math.ceil(lines.length / 3 ) + 1;
+	}
+	
+	// function layout() {
+	// 	var p = panels[panels.length - 1],
+	// 			n = p.node,
+	// 			c = {curve : 'easeOut'};
+	// 	n.proportions.set([.25, .25], c);
+	// 	n.align.set([Math.random(), Math.random()], c);
+	// }
+		
+	function screenSize(size) {
+		return Math.floor(size / 75);
+	}
+		
+	var c = {curve : 'easeOut'};	
+	function layout() {
+		var w = screenSize(window.innerWidth - margin),
+				h = screenSize(window.innerHeight - 2 * barHeight),
+				start, rank, r, trial, best, cnt = 0;
+		
+		function screenLayout() {
+			start = performance.now();
+			rank = 0;
+			trial = getTrial(panels);
+			best = null;
+			for(;;) {
+				for(var i = 0; i < orders.length; i++) {
+					var order = orders[i];
+					if(order == rand) trial.forEach(tp => tp.rand = tp.p.isMain ? 1 : Math.random());
+					trial.sort(order);
+					new Packer(w, h).fit(trial);
+					cnt++;
+					if(trial.every(tp => tp.fit) && (r = getRank()) > rank) {
+						rank = r;
+						best = trial;
+					}
+					if(late()) return best;
+					else trial = getTrial(trial);
+				}
+				if(late() || !scale()) return best;
+			} 
+
+			function scale() {
+				var scaled = false;
+				trial.forEach(tp => {
+					if(tp.w > 4) {tp.w = tp.w - 1; scaled = true;}
+					if(tp.h > 4) {tp.h = tp.h - 1; scaled = true;}
+				});
+				
+				return scaled;
+			}
+			function getRank() {
+				var imp = trial.find(tp => tp.p.isImportant);
+				return getAreaRank() * .6 + getImpHRank(imp) * .3 + getImpVRank(imp) * .1;
+			}
+			function getAreaRank() {
+				return trial.map(tp => tp.w * tp.h).reduce((a,b) => a + b) / trial.map(tp => tp.p.w * tp.p.h).reduce((a,b) => a + b);
+			}
+			function getImpHRank(imp) {
+				return imp.fit.x / trial.map(tp => tp.fit.x).reduce((a,b) => Math.max(a, b));
+			}
+			function getImpVRank(imp) {
+				return 1 - imp.fit.y / trial.map(tp => tp.fit.y).reduce((a,b) => Math.max(a, b));
+			}
+		}
+		
+		function pageLayout() {
+			return false;
+		}
+		
+		function late() {
+			var time = performance.now() - start;
+			return Math.max(time * rank, time / 10) > 50;
+		}
+		
+		function getTrial(source) {
+			return source.map(sp => ({p: sp.p, w: sp.w, h: sp.h}));
+		}
+		
+		var rand = (tp1, tp2) => tp1.rand - tp2.rand,
+				orders = [
+					(tp1, tp2) => tp1.p.isMain ? -1 : tp2.p.isMain ? 1 : (Math.max(tp1.w, tp1.h) - Math.max(tp2.w, tp2.h)),
+					(tp1, tp2) => tp1.p.isMain ? -1 : tp2.p.isMain ? 1 : (tp1.w * tp1.h - tp2.w * tp2.h),
+					(tp1, tp2) => tp1.p.isMain ? -1 : tp2.p.isMain ? 1 : (tp1.w - tp2.w),
+					(tp1, tp2) => tp1.p.isMain ? -1 : tp2.p.isMain ? 1 : (tp1.h - tp2.h),
+					rand, rand, rand, rand, rand, rand
+				];
+		
+		function doLayout() {
+			best.forEach(tp => { 
+				tp.p.node.proportions.set([tp.w / w, tp.h / h], c);
+				tp.p.node.align.set([tp.fit.x / w, tp.fit.y / h], c);
+			});
+		}
+			
+		if(screenLayout() || pageLayout()) doLayout();
+		// l(cnt);
+	}
+	
+	var dlayout = debounce(layout, 100);
+	window.onresize = dlayout;
+	
+	function debounce(func, wait, immediate) {
+		var timeout;
+		return function() {
+			var context = this, args = arguments;
+			var later = function() {
+				timeout = null;
+				if (!immediate) func.apply(context, args);
+			};
+			var callNow = immediate && !timeout;
+			clearTimeout(timeout);
+			timeout = setTimeout(later, wait);
+			if (callNow) func.apply(context, args);
+		};
+	};
+
 </script>
 
 <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
@@ -74,59 +233,82 @@
 		background-position:top;
 		margin:0;
 	}
-	bc {
-		display: flex;
-		margin: 15px 24px,
-		font-size: 18px,
-		opacity: .5,
-	}
-	c::after {
-		content: '>';
-		margin: 0 18px;
-	}
+	/*bc {*/
+	/*	display: flex;*/
+	/*	margin: 15px 24px,*/
+	/*	font-size: 18px,*/
+	/*	opacity: .5,*/
+	/*}*/
+	/*c::after {*/
+	/*	content: '>';*/
+	/*	margin: 0 18px;*/
+	/*}*/
 	panel {
 		display: block;
-		padding: 24px;
-		padding-right: 0;
+		box-sizing: border-box;
+		height: 100%;
 		color: white;
 		box-shadow: 0 15px 60px 0 rgba(42,44,58,.15), 7px 15px 22px 0 rgba(129,165,238,.1);
 		background-color: #7E57C2;
-	}
-	panel > div {
-		padding-right: 24px;
-		overflow-y: auto;
+		background-color: #4527A0;
 	}
 	header {
-		position: relative;
-		display: flex;
-		justify-content: space-between;
+		/*position: relative;*/
+		/*display: flex;*/
+		/*justify-content: space-between;*/
+		box-sizing: border-box;
+		padding: 24px;
 		font-size: 22px;
-		margin-bottom: 24px;
+		/*margin-bottom: 24px;*/
 	}
-	bullet {
-		position: relative;
+	panel > div {
+		box-sizing: border-box;
+		overflow-y: auto;
 	}
-	bullet::after {
-		display: none;
-		content: '';
+	panel.contain {
+		display: flex;
+		flex-direction: column;
+	}
+	panel.contain > div {
+		flex: 1;
+		padding: 0 24px 24px;
+	}
+	panel.cover > header {
 		position: absolute;
-		top: -5px;
-		left: 50%;
-		background-color: #CFD8DC;
-		width: 5px;
-		height: 5px;
-		border-radius: 50%;
+		z-index: 1;
+		width: 100%;
+		background: rgba(126, 87, 194, .5);
 	}
-	.link {
-		background: rgba(126, 87, 194, .3);
-		color: white;
+	panel.cover > div {
+		position: relative;
+		z-index: 0;
+		height: 100%;
 	}
-	.link > header {
-		margin-bottom: 0;
-	}
-	.link > header > span:last-of-type {
-		margin-left: 30px;
-	}
+	
+	/*bullet {*/
+	/*	position: relative;*/
+	/*}*/
+	/*bullet::after {*/
+	/*	display: none;*/
+	/*	content: '';*/
+	/*	position: absolute;*/
+	/*	top: -5px;*/
+	/*	left: 50%;*/
+	/*	background-color: #CFD8DC;*/
+	/*	width: 5px;*/
+	/*	height: 5px;*/
+	/*	border-radius: 50%;*/
+	/*}*/
+	/*.link {*/
+	/*	background: rgba(126, 87, 194, .3);*/
+	/*	color: white;*/
+	/*}*/
+	/*.link > header {*/
+	/*	margin-bottom: 0;*/
+	/*}*/
+	/*.link > header > span:last-of-type {*/
+	/*	margin-left: 30px;*/
+	/*}*/
 	ul {
 		list-style: disc outside none;
 		margin: 0;
@@ -134,46 +316,46 @@
 	li {
 		line-height: 1.5em;
 	}
-	pills {
-		display: flex;
-		position: absolute;
-		bottom: 12px;
-		left: 24px;
-	}
-	pill {
-		padding: 12px;
-		background-color: #4527A0;
-		color: white;
-		border-radius: 24px;
-		margin-right: 12px;
-	}
-	pill:not([class]) {
-		background-color: #9575CD;
-	}
-	.plus {
-		font-size: 30px;
-		padding: 5px 15px;
-	}
-	.proposal {
-	}
-	.ooc {
-		background: none;
-		color: inherit;
-	}
-	pill.ooc {
-		border: solid 1px #777;
-	}
-	input {
-		display: none;
-		position: absolute;
-		top: 12px;
-		right: 24px;
-		border: none;
-		outline: none;
-		background: rgba(255, 255, 255, .3);
-		padding: 5px;
-		font-size: 14px;
-		font-family: inherit;
+	/*pills {*/
+	/*	display: flex;*/
+	/*	position: absolute;*/
+	/*	bottom: 12px;*/
+	/*	left: 24px;*/
+	/*}*/
+	/*pill {*/
+	/*	padding: 12px;*/
+	/*	background-color: #4527A0;*/
+	/*	color: white;*/
+	/*	border-radius: 24px;*/
+	/*	margin-right: 12px;*/
+	/*}*/
+	/*pill:not([class]) {*/
+	/*	background-color: #9575CD;*/
+	/*}*/
+	/*.plus {*/
+	/*	font-size: 30px;*/
+	/*	padding: 5px 15px;*/
+	/*}*/
+	/*.proposal {*/
+	/*}*/
+	/*.ooc {*/
+	/*	background: none;*/
+	/*	color: inherit;*/
+	/*}*/
+	/*pill.ooc {*/
+	/*	border: solid 1px #777;*/
+	/*}*/
+	/*input {*/
+	/*	display: none;*/
+	/*	position: absolute;*/
+	/*	top: 12px;*/
+	/*	right: 24px;*/
+	/*	border: none;*/
+	/*	outline: none;*/
+	/*	background: rgba(255, 255, 255, .3);*/
+	/*	padding: 5px;*/
+	/*	font-size: 14px;*/
+	/*	font-family: inherit;*/
 		/*width: 100px;*/
-	}
+	/*}*/
 </style>
