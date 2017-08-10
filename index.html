@@ -12,7 +12,9 @@
 <script src="plugins/outline.viewer.js"></script>
 <script src="plugins/map.viewer.js"></script>
 
-<body></body>
+<body>
+	<div class="plus">+</div>
+</body>
 
 <script>
 	var l = function(o) {console.log(o); return o;},
@@ -33,9 +35,12 @@
 			view = '*View.1',
 			ctxs = [],
 			panels = [],
+			links = [],
 			content, 
 			margin = 10,
-			barHeight = 32;
+			umargin = .27,
+			barHeight = 32,
+			throwSpeed = 7;
 	
 	GenericInput.register({
 		 mouse : MouseInput,
@@ -89,40 +94,78 @@
 		var viewer = new Viewer(p.children[1], lines, text);
 
 		var surface = new Surface(),
+				handle = new GenericInput(['mouse', 'touch']),
 				proportions = new Transitionable([1, 1]),
 				align = new Transitionable([0, 0]),
+				alignDiff = new Differential(),
+				alignAcc = new Accumulator([0,0]),
 				margins = [margin, margin],
-				node = {proportions, align, margins};
+				node = {proportions, align: alignAcc, margins},
+				desired = viewer.desired(),
+				vpadding = {contain: 1.33, cover: 0, small: 1},
+				hpadding = {contain: .66, cover: 0, small: .5},
+				panel = {ctx, node, surface, dom: p, align, isMain, isImportant, small,
+					w: Math.ceil(Math.max(desired[0], ctx.text.length / 5)) + hpadding[Viewer.class] + umargin, 
+					h: Math.ceil(desired[1]) + vpadding[Viewer.class] + umargin},
+				detached = false;
+		panel.p = panel;
+		
+		handle.subscribe(surface);
+		handle.on('start', function(e){
+			if(e.event.target.tagName == 'HEADER') return;
+			detached = true;
+			handle.unsubscribeInput('touch');
+			handle.unsubscribeInput('mouse');
+		});
+		p.addEventListener('touchend', () => {
+			if(!detached) return;
+			handle.subscribeInput('touch');
+			handle.subscribeInput('mouse');
+		});
+		handle.on('end', function(e){
+			if(detached) { detached = false; return; }
+
+			var vx = e.velocity[0],
+					vy = e.velocity[1],
+					vxa = Math.abs(vx),
+					vya = Math.abs(vy),
+					v = Math.max(vxa, vya);
+					
+			if(vx * vx + vy * vy < throwSpeed) return;
+			
+			if(v == vy)
+				throwTo(panel, 'bottom');
+			else if(v == -vy) 
+				throwTo(panel, 'top');
+			else if(v == vx)
+				throwTo(panel, 'right');
+			else 
+				throwTo(panel, 'left');
+		});
+
+		alignAcc.subscribe(handle.pluck('delta').map(d => [d[0]/contentW(), d[1]/contentH()]));
+		
+		alignDiff.subscribe(align);
+		alignAcc.subscribe(alignDiff);
+		
+		panels.push(panel);
 		
 		surface.setContent(p);
 		content.add(node).add(surface);
 		
-		var desired = viewer.desired(),
-				vpadding = {contain: 1.33, cover: 0, small: 1},
-				hpadding = {contain: .66, cover: 0, small: .5},
-				umargin = .27,
-				panel = {node, surface, isMain, isImportant, small,
-					w: Math.ceil(Math.max(desired[0], ctx.text.length / 5)) + hpadding[Viewer.class] + umargin, 
-					h: Math.ceil(desired[1]) + vpadding[Viewer.class] + umargin};
-		panel.p = panel;
-		panels.push(panel);
-		
-		addPanelHandler(panel);
-		
 		dlayout();
 	}
 	
-	function addPanelHandler(panel) {
-		var handler = new GenericInput(['mouse', 'touch']);
-		handler.subscribe(panel.surface);
+	function throwTo(panel, pos) {
+		panels.splice(panels.indexOf(panel), 1);
+		dlayout();
 		
-		handler.on('end', panelHandlerEnd);
-		
-		return handler;
-	}
-	
-	function panelHandlerEnd(data) {
-		l(data);
+		panel.dom.className = 'small link';
+		panel.node.proportions.set([(panel.ctx.text.length / 7 + umargin) / contentUnitW(), (1 + umargin) / contentUnitH()], c);
+		panel.align.reset(panel.node.align.get());
+		var h = (62 + links.map(p => p.surface._cachedSize[0] + 20).reduce((a,b) => a+b, 0)) / contentW();
+		panel.align.set([h, 1], c);
+		links.push(panel);
 	}
 	
 	function sniffViewer(lines, text) {
@@ -136,14 +179,26 @@
 		e.path.find(s => s.index !== undefined);
 	}
 	
-	function screenSize(size) {
+	function unitSize(size) {
 		return size / 75;
+	}
+	function contentW() {
+		return window.innerWidth - margin;
+	}
+	function contentH() {
+		return window.innerHeight - 2 * barHeight;
+	}
+	function contentUnitW() {
+		return unitSize(contentW());
+	}
+	function contentUnitH() {
+		return unitSize(contentH());
 	}
 		
 	var c = {curve : 'easeOut'};	
 	function layout() {
-		var w = screenSize(window.innerWidth - margin),
-				h = screenSize(window.innerHeight - 2 * barHeight),
+		var w = contentUnitW(),
+				h = contentUnitH(),
 				start, rank, r, trial, best, cnt = 0;
 		
 		function screenLayout() {
@@ -185,10 +240,10 @@
 				return trial.map(tp => tp.w * tp.h).reduce((a,b) => a + b) / trial.map(tp => tp.p.w * tp.p.h).reduce((a,b) => a + b);
 			}
 			function getImpHRank(imp) {
-				return imp.fit.x / (trial.map(tp => tp.fit.x).reduce((a,b) => Math.max(a, b)) || 1);
+				return imp ? imp.fit.x / (trial.map(tp => tp.fit.x).reduce((a,b) => Math.max(a, b)) || 1) : 1;
 			}
 			function getImpVRank(imp) {
-				return 1 - imp.fit.y / (trial.map(tp => tp.fit.y).reduce((a,b) => Math.max(a, b)) || 1);
+				return imp ? 1 - imp.fit.y / (trial.map(tp => tp.fit.y).reduce((a,b) => Math.max(a, b)) || 1) : 1;
 			}
 		}
 		
@@ -217,7 +272,8 @@
 		function doLayout() {
 			best.forEach(tp => { 
 				tp.p.node.proportions.set([tp.w / w, tp.h / h], c);
-				tp.p.node.align.set([tp.fit.x / w, tp.fit.y / h], c);
+				tp.p.align.reset(tp.p.node.align.get());
+				tp.p.align.set([tp.fit.x / w, tp.fit.y / h], c);
 			});
 		}
 			
@@ -257,6 +313,20 @@
 		background-position:top;
 		margin:0;
 	}
+	.plus {
+		position: absolute;
+		left: 20px;
+		bottom: 20px;
+		border-radius: 50%;
+		width: 42px;
+		height: 42px;
+		background: #4527A0;
+		color: white;
+		font-size: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
 	panel {
 		display: block;
 		box-sizing: border-box;
@@ -275,6 +345,15 @@
 	}
 	panel.small > div {
 		display: none;
+	}
+	panel.link {
+		height: auto;
+		border-radius: 38px;
+	}
+	panel.link > header {
+		padding: 12px;
+		font-size: 16px;
+		text-align: center;
 	}
 	panel > div {
 		box-sizing: border-box;
