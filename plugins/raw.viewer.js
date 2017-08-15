@@ -1,6 +1,6 @@
 (function() {
 	Viewer.key = 'raw';
-	Viewer.class = 'contain';
+	Viewer.type = 'contain';
 	
 	Viewer.sniff = function() {
 		return .1;
@@ -25,7 +25,7 @@
 		
 	}
 	
-	viewers.push(Viewer);
+	Viewers.push(Viewer);
 	
 })();
 

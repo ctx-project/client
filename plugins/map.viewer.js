@@ -1,6 +1,6 @@
 (function() {
 	Viewer.name = 'map';
-	Viewer.class = 'cover';
+	Viewer.type = 'cover';
 	
 	var regex = /(^|\s+)-?\d{1,2}\.?\d*\s*,\s*\d{1,3}\.?\d*($|\s+)/;
 	
@@ -42,7 +42,7 @@
 		
 	}
 	
-	viewers.push(Viewer);
+	Viewers.push(Viewer);
 	
 })();
 

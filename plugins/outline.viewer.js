@@ -1,6 +1,6 @@
 (function() {
 	Viewer.name = 'outline';
-	Viewer.class = 'contain';
+	Viewer.type = 'contain';
 	
 	Viewer.sniff = function(lines) {
 		return .5;
@@ -25,7 +25,7 @@
 		
 	}
 	
-	viewers.push(Viewer);
+	Viewers.push(Viewer);
 	
 })();
 
