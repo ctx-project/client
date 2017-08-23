@@ -6,9 +6,9 @@
 		return .1;
 	}
 	
-	function Viewer(dom, lines, text) {
-		this.lines = lines;
-		dom.innerHTML = `<pre style="line-height:1.4em;margin:0;overflow:auto;height:100%;">${text}</pre>`;
+	function Viewer(panel) {
+		this.lines = panel.lines;
+		panel.content.innerHTML = `<pre style="line-height:1.4em;margin:0;overflow:auto;height:100%;">${panel.text}</pre>`;
 	}	
 	
 	Viewer.prototype.desired = function() {

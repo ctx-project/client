@@ -10,18 +10,28 @@
 				important = panel.flags.important,
 				support = panel.flags.support,
 				ooc = panel.group.flags.ooc,
-				level = important * 10 + support,
+				level = ooc ? 'ooc' : (important * 10 + support),
 				group = Math.min(panel.group.groupIndex, levels[level].length - 1),
 				depth = Math.min(panel.ctx.depth, 2),
 				type = panel.Viewer.type,
 				range = levels[level][group],
-				color = `${range}-${ooc ? 100 : depths[range][depth]}`;
+				color = ooc ? 'white' : `${range}-${depths[range][depth]}`;
 		
 		ps.backgroundColor = colors[color];
 		ps.color = ooc ? null : 'white';
 		
 		if(type == 'cover')
 			hs.backgroundColor = Helper.hexToRgba(colors[color], .5);
+			
+		if(level) {
+			if(level != 'ooc') range = levels[0][group];
+			color = `${range}-${depths[range][depth]}`;
+			hs.borderLeftColor = colors[color];
+		}
+	}
+	
+	Styler.prototype.backdrop = function(panel, toggle) {
+		panel.visual.classList.toggle('backdrop', toggle);
 	}
 	
 	Stylers.push(Styler);
@@ -30,7 +40,8 @@
 				00: ['deep-purple',	'green',	'light-blue',	'cyan',	'teal'],
 				10: ['pink', 'red', 'deep-orange'],
 				01: ['grey', 'blue-grey'],
-				11: ['brown']
+				11: ['brown'],
+				ooc: ['lime', 'amber', 'yellow']
 			},
 			depths = {
 				'deep-purple': [900, 500, 300],	
@@ -43,7 +54,10 @@
 				'deep-orange': [800,600,400],
 				'grey': [800, 700, 600], 
 				'blue-grey': [800, 600, 400],
-				'brown': [800, 600, 400]
+				'brown': [800, 600, 400],
+				'lime': [800, 600, 400],
+				'amber': [800, 600, 400],
+				'yellow': [800, 700, 600]
 			},
 			colors = 	{
 				"red-50": "#ffebee",

@@ -6,9 +6,9 @@
 		return .5;
 	}
 	
-	function Viewer(dom, lines) {
-		this.lines = lines.map(t => t.replace(/\s*~\d*\s*$/, ''));
-		dom.innerHTML = `<li>${this.lines.join('</li><li>')}</li>`;
+	function Viewer(panel) {
+		this.lines = panel.lines.map(t => t.replace(/\s*~\d*\s*$/, ''));
+		panel.content.innerHTML = `<li>${this.lines.join('</li><li>')}</li>`;
 	}	
 	
 	Viewer.prototype.desired = function() {

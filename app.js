@@ -1,6 +1,7 @@
 var Var = {},
 		Context = Samsara.DOM.Context,
 		Surface = Samsara.DOM.Surface,
+		ContainerSurface = Samsara.DOM.ContainerSurface,
 		Transform = Samsara.Core.Transform,
 		Transitionable = Samsara.Core.Transitionable,
 		MouseInput = Samsara.Inputs.MouseInput,

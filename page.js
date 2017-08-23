@@ -1,36 +1,40 @@
 var Page = {
 	init: function() {
 		Var.study.page = {
+			study: Var.study,
 			static: {
+				type: 'static',
 				panels: [],
 				node: Var.study.node.add({
 					margins: [Const.margin, 2 * Const.barHeight], 
 					origin: [1, .5], 
 					align: [1, .5],
-					// opacity: .5,
-					// transform: Transform.scale([0.5, 0.5, 1])
 				})
 			},
 			temp: {
+				type: 'temp',
 				panels: [],
 				node: Var.study.node.add({
 					margins: [Const.margin, 2 * Const.barHeight], 
 					origin: [1, .5], 
 					align: [1, .5],
-					// transform: Transform.scale([0.7, 0.7, 1])
 				})
 			},
 			links: {
+				type: 'links',
 				panels: [],
 			}
 		};
+		Var.study.page.static.page = Var.study.page;
+		Var.study.page.temp.page = Var.study.page;
+		Var.study.page.links.page = Var.study.page;
 		
 		var conn = new CtxConnection(window.location.href, 'andrei');
 		
 		conn.sub().get('*View.1', text => {
 			text.split('\n')
 					.map(line => ({
-						line: l(line), 
+						line: line, 
 						id: line.match(/~(\d{4,})\s*$/i)[1],
 						query: line.split(' ').filter(w => w[0] != '*' && w[0] != '~').join(' '), 
 						ctxKey: (line.match(/(?:^|\s+)(\*ctx:\d{4,})(?:$|\s+)/i) || [null, 0])[1], 
@@ -40,8 +44,8 @@ var Page = {
 							ooc: line.indexOf('*ooc') != -1 ? 1 : 0,
 							important: line.indexOf("Important") != -1 ? 1 : 0,
 							support: line.indexOf("Info") != -1 ? 1 : 0,
+							small: +(line.match(/(?:^|\s+)\*small:(\d{1})/i) || [null, null])[1]
 						},
-						small: +(line.match(/(?:^|\s+)\*small:(\d{1})/i) || [null, null])[1]
 					}))
 					.sort((a, b) => a.id - b.id)
 					.forEach((p, i, panels) => {
@@ -64,7 +68,10 @@ var Page = {
 			Panel.add(Var.study.page.static, ctx.panel);
 			// Panel.add(Var.study.page.temp, ctx, text);
 		}
-				
+		
+		this._layouts.static = Layout.area.bind(Layout);
+		this._layouts.links = Layout.horizontal.bind(Layout);
+		this._layouts.temp = Layout.center.bind(Layout);
 	},
 	
 	unitSize: function(size) {
@@ -94,11 +101,14 @@ var Page = {
 			lo = Helper.debounce(function() {
 				var width = this.containerUnitWidth(),
 						height = this.containerUnitHeight(),
-						fit = Layout.fit(container.panels, width, height, 2, 2);
+						fit = this._layouts[container.type](container.panels, width, height, 2, 2);
 		
 				if(!fit) return;
 		
-				fit.forEach(t => Panel.layout(t, width, height));
+				fit.forEach(t => Panel.move(t.tile, {
+					proportions: [t.width / width, t.height / height], 
+					align: [t.fit.x / width, t.fit.y / height]
+					}));
 			}.bind(this), 100);
 
 			this._layouts.set(container, lo);
@@ -107,16 +117,9 @@ var Page = {
 		lo();
 	},
 	
-	// throwTo: function(panel, pos) {
-	// 	static.splice(static.indexOf(panel), 1);
-	// 	dlayout();
-		
-	// 	panel.dom.className = 'small link';
-	// 	panel.node.proportions.set([(panel.ctx.text.length / 7 + Const.umargin) / containerUnitW(), (1 + Const.umargin) / containerUnitH()], Const.curve);
-	// 	panel.align.reset(panel.node.align.get());
-	// 	var h = (62 + links.map(p => p.surface._cachedSize[0] + 20).reduce((a,b) => a+b, 0)) / containerW();
-	// 	panel.align.set([h, 1], Const.curve);
-	// 	links.push(panel);
-	// }
+	backdrop: function(page, toggle) {
+		var styler = page.study.styler;
+		page.static.panels.forEach(p => styler.backdrop(p, toggle));
+	}
 }
 

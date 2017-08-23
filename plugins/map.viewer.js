@@ -8,15 +8,15 @@
 		return lines.filter(l => l.match(regex)).length / lines.length;
 	}
 	
-	function Viewer(dom, lines) {
-		var map = new google.maps.Map(dom, {
+	function Viewer(panel) {
+		var map = new google.maps.Map(panel.content, {
 			mapTypeId: google.maps.MapTypeId.TERRAIN,
 			scrollwheel: false,
 			disableDefaultUI: true
 		}),
 		bounds = new google.maps.LatLngBounds();
 
-		lines
+		panel.lines
 			.map(l => l.match(regex))
 			.filter(m => m)
 			.forEach(m => { 
