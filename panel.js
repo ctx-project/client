@@ -52,7 +52,7 @@ var Panel = {
 		panel.last = {};
 		panel.container = container;
 		container.panels.push(panel);
-		Var.study.styler.apply(panel);
+		Var.study.theme.apply(panel);
 		Panel.setSize(panel);
 		Page.layout(container);
 	},

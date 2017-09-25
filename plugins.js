@@ -8,5 +8,5 @@ function SmallViewer(panel) {this.panel = panel;}
 SmallViewer.type = "small";
 SmallViewer.prototype.desired = function() { return this.panel.flags.main ? [2, 2] : [0, 0]};
 
-var Stylers = [];
+var Themes = [];
 

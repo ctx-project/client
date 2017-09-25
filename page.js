@@ -118,8 +118,8 @@ var Page = {
 	},
 	
 	backdrop: function(page, toggle) {
-		var styler = page.study.styler;
-		page.static.panels.forEach(p => styler.backdrop(p, toggle));
+		var theme = page.study.theme;
+		page.static.panels.forEach(p => theme.backdrop(p, toggle));
 	}
 }
 

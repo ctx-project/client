@@ -1,10 +1,10 @@
 (function() {
-	Styler.name = 'material';
+	Theme.name = 'material';
 	
-	function Styler() {
+	function Theme() {
 	}	
 	
-	Styler.prototype.apply = function(panel) {
+	Theme.prototype.apply = function(panel) {
 		var ps = panel.visual.style,
 				hs = panel.header.style,
 				important = panel.flags.important,
@@ -30,11 +30,11 @@
 		}
 	}
 	
-	Styler.prototype.backdrop = function(panel, toggle) {
+	Theme.prototype.backdrop = function(panel, toggle) {
 		panel.visual.classList.toggle('backdrop', toggle);
 	}
 	
-	Stylers.push(Styler);
+	Themes.push(Theme);
 	
 	var levels = {
 				00: ['deep-purple',	'green',	'light-blue',	'cyan',	'teal'],
