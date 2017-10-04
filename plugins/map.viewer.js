@@ -4,8 +4,8 @@
 	
 	var regex = /(^|\s+)-?\d{1,2}\.?\d*\s*,\s*\d{1,3}\.?\d*($|\s+)/;
 	
-	Viewer.sniff = function(lines) {
-		return lines.filter(l => l.match(regex)).length / lines.length;
+	Viewer.sniff = function(items) {
+		return items.filter(l => l.match(regex)).length / items.length;
 	}
 	
 	function Viewer(panel) {
@@ -16,7 +16,7 @@
 		}),
 		bounds = new google.maps.LatLngBounds();
 
-		panel.lines
+		panel.items
 			.map(l => l.match(regex))
 			.filter(m => m)
 			.forEach(m => { 

@@ -104,6 +104,6 @@ panel {
 	transition: filter .5s, opacity .5s;
 }
 .backdrop {
-	filter: blur(5px);
+	/*filter: blur(5px);*/
 	opacity: .3;
 }

@@ -1,18 +1,50 @@
 var Panel = {
-	add: function(container, panel) {
-		var viewerm = panel.line.match(/(?:^|\s+)\*viewer:(\w+)/i),
+	create: function(item) {
+		return {
+			item: item, 
+			id: item.match(/~(\d{4,})\s*$/i)[1],
+			query: item.split(' ').filter(w => w[0] != '*' && w[0] != '~').join(' '), 
+			ctxKey: (item.match(/(?:^|\s+)(\*ctx:\d{4,})(?:$|\s+)/i) || [null, 0])[1], 
+			ctxId: +(item.match(/(?:^|\s+)\*ctx:(\d{4,})(?:$|\s+)/i) || [null, 0])[1],
+			flags: { 
+				main: item.indexOf('*main') != -1 ? 1 : 0,
+				ooc: item.indexOf('*ooc') != -1 ? 1 : 0,
+				important: item.indexOf("Important") != -1 ? 1 : 0,
+				support: item.indexOf("Info") != -1 ? 1 : 0,
+				small: +(item.match(/(?:^|\s+)\*small:(\d{1})/i) || [null, null])[1]
+			},
+		}
+	},
+	
+	prepare: function(panel, panels) {
+		panels[`*ctx:${panel.id}`] = panel;
+		panel.parent = panel.ctxId ? panels[panel.ctxKey] : null;
+		panel.group = panel.parent ? panel.parent.group : panel;
+		if(!panel.parent) 
+			panel.groupIndex = panels
+			 .filter(pi => !pi.parent && pi.flags.important == panel.flags.important && pi.flags.support == panel.flags.support && pi.flags.ooc == panel.flags.ooc)
+			 .indexOf(panel);
+		var ctx = (panel.parent ? panel.parent.ctx : Var.conn).sub(panel.query);
+		panel.ctx = ctx;
+		ctx.panel = panel;
+		
+		return panel;
+	},
+	
+	add: function(panel, layer) {
+		var viewerm = panel.item.match(/(?:^|\s+)\*viewer:(\w+)/i),
 				cviewer = viewerm ? viewerm[1].toLowerCase() : null,
 				fullQuery = panel.ctx.getQuery().toLowerCase();
 		
-		panel.lines = panel.flags.small ? null : panel.text.split('\n') ;
+		panel.items = panel.flags.small ? null : panel.text.split('\n') ;
 		panel.Viewer = panel.flags.small ? SmallViewer : cviewer ? Viewers.find(v => v.key == cviewer) : null;
-		panel.Viewer = panel.Viewer || Viewers.sniff(panel.lines, panel.text);
+		panel.Viewer = panel.Viewer || Viewers.sniff(panel.items, panel.text);
 		
 		panel.proportions = new Transitionable([1, 1]);
 		panel.align = new Transitionable([0, 0]);
 		panel.alignDiff = new Differential();
 		panel.alignAcc = new Accumulator([0,0]);
-		panel.node = container.node.add({proportions: panel.proportions, align: panel.alignAcc, margins: [Const.margin, Const.margin]});
+		panel.node = Var.frame.add({proportions: panel.proportions, align: panel.alignAcc, margins: [Const.margin, Const.margin]});
 		
 		panel.surface = new Surface();
 		
@@ -43,18 +75,18 @@ var Panel = {
 			Gestures.screen(panel, e);	
 		});
 
-		panel.alignAcc.subscribe(panel.handle.pluck('delta').map(d => [d[0]/Page.containerWidth(), d[1]/Page.containerHeight()]));
+		panel.alignAcc.subscribe(panel.handle.pluck('delta').map(d => [d[0]/Page.frameWidth(), d[1]/Page.frameHeight()]));
 		panel.alignDiff.subscribe(panel.align);
 		panel.alignAcc.subscribe(panel.alignDiff);
 		
 		panel.surface.setContent(panel.visual);
 		panel.node.add(panel.surface);
 		panel.last = {};
-		panel.container = container;
-		container.panels.push(panel);
-		Var.study.theme.apply(panel);
+		panel.layer = layer;
+		layer.panels.push(panel);
+		Var.theme.apply(panel);
 		Panel.setSize(panel);
-		Page.layout(container);
+		Page.layout(layer);
 	},
 	
 	getTitle: function(panel) {
@@ -63,47 +95,32 @@ var Panel = {
 		return p.join(' ');
 	},
 	
+	setSize: function(panel) {
+		panel.layer.setSize(panel);
+	},
+
 	move: function(panel, pos) {
 		panel.proportions.set(pos.proportions, Const.curve);
 		panel.align.reset(panel.alignAcc.get());
 		panel.align.set(pos.align, Const.curve);
-		panel.last[panel.container.type] = pos;
+		panel.last[panel.layer.type] = pos;
 	},
 	
 	return: function(panel) {
-		Panel.move(panel, panel.last[panel.container.type]);
+		Panel.move(panel, panel.last[panel.layer.type]);
 	},
 	
-	changeContainer: function(panel, type) {
-		var container = panel.container;
+	changeLayer: function(panel, type) {
+		var layer = panel.layer;
 		
-		container.panels.splice(container.panels.indexOf(panel), 1);
-		panel.container = null;
+		layer.panels.splice(layer.panels.indexOf(panel), 1);
+		panel.layer = null;
 		
 		if(!type) return;
 		
-		container = container.page[type];
-		panel.container = container;
-		container.panels.push(panel);
+		layer = Var[type];
+		panel.layer = layer;
+		layer.panels.push(panel);
 	},
-	
-	setSize: function(panel) {
-		if(panel.container.type == 'static') _setSize(Const.umargin);
-		
-		else if(panel.container.type == 'temp') _setSize(0);
-		
-		else if(panel.container.type == 'links') {
-			panel.width = Math.ceil(panel.ctx.query.length / 5) + Const.umargin;
-			panel.height = 1 + Const.umargin;
-		}
-		
-		function _setSize(margin) {
-			panel.desired = panel.viewer.desired();
-			panel.width = Math.ceil(Math.max(panel.desired[0], panel.ctx.query.length / 5)) + Const.hpadding[panel.Viewer.type] + margin;
-			panel.height = Math.ceil(panel.desired[1]) + Const.vpadding[panel.Viewer.type] + margin;
-		}
-	},
-
-	
 }
 

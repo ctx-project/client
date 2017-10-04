@@ -1,107 +1,107 @@
+var Var = {},
+		Context = Samsara.DOM.Context,
+		Surface = Samsara.DOM.Surface,
+		ContainerSurface = Samsara.DOM.ContainerSurface,
+		Transform = Samsara.Core.Transform,
+		Transitionable = Samsara.Core.Transitionable,
+		MouseInput = Samsara.Inputs.MouseInput,
+		TouchInput = Samsara.Inputs.TouchInput,
+		GenericInput = Samsara.Inputs.GenericInput,
+		Accumulator = Samsara.Streams.Accumulator,
+		Differential = Samsara.Streams.Differential;
+
+GenericInput.register({
+	 mouse : MouseInput,
+	 touch : TouchInput,
+});
+
 var Page = {
 	init: function() {
-		Var.study.page = {
-			study: Var.study,
-			static: {
-				type: 'static',
-				panels: [],
-				node: Var.study.node.add({
-					margins: [Const.margin, 2 * Const.barHeight], 
-					origin: [1, .5], 
-					align: [1, .5],
-				})
-			},
-			temp: {
-				type: 'temp',
-				panels: [],
-				node: Var.study.node.add({
-					margins: [Const.margin, 2 * Const.barHeight], 
-					origin: [1, .5], 
-					align: [1, .5],
-				})
-			},
-			links: {
-				type: 'links',
-				panels: [],
-			}
+		Var.context = new Context();
+		Var.context.mount(document.body);
+		
+		Var.container = Var.context.add({});
+		Var.frame = Var.container.add({
+			margins: [Const.margin, 2 * Const.barHeight], 
+			origin: [1, .5], 
+			align: [1, .5],
+		});
+		
+		Var.static = {
+			type: 'static', 
+			panels: [], 
+			fit: Fit.area.bind(Fit),
+			setSize: panel => Fit.setPanelSize(panel, Const.umargin)
 		};
-		Var.study.page.static.page = Var.study.page;
-		Var.study.page.temp.page = Var.study.page;
-		Var.study.page.links.page = Var.study.page;
+		Var.over = {
+			type: 'over', 
+			panels: [], 
+			fit: Fit.center.bind(Fit),
+			setSize: panel => Fit.setPanelSize(panel, 0)
+		};
+		Var.links = {
+			type: 'links', 
+			panels: [], 
+			fit: Fit.horizontal.bind(Fit),
+			setSize: panel => Fit.setLinkSize(panel)
+		};
+
+		window.onresize = () => { 
+			Page.layout(Var.static);
+			Page.layout(Var.over);
+		}
 		
-		var conn = new CtxConnection(window.location.href, 'andrei');
+		Var.theme = new Themes[0];
 		
-		conn.sub().get('*View.1', text => {
+		Var.conn = new CtxConnection(window.location.href, 'andrei');
+		
+		this.fetchTopic('*View.1');
+	},
+	
+	fetchTopic: function(phrase) {
+		Var.conn.sub().get(phrase, text => {
 			text.split('\n')
-					.map(line => ({
-						line: line, 
-						id: line.match(/~(\d{4,})\s*$/i)[1],
-						query: line.split(' ').filter(w => w[0] != '*' && w[0] != '~').join(' '), 
-						ctxKey: (line.match(/(?:^|\s+)(\*ctx:\d{4,})(?:$|\s+)/i) || [null, 0])[1], 
-						ctxId: +(line.match(/(?:^|\s+)\*ctx:(\d{4,})(?:$|\s+)/i) || [null, 0])[1],
-						flags: { 
-							main: line.indexOf('*main') != -1 ? 1 : 0,
-							ooc: line.indexOf('*ooc') != -1 ? 1 : 0,
-							important: line.indexOf("Important") != -1 ? 1 : 0,
-							support: line.indexOf("Info") != -1 ? 1 : 0,
-							small: +(line.match(/(?:^|\s+)\*small:(\d{1})/i) || [null, null])[1]
-						},
-					}))
+					.map(Panel.create)
 					.sort((a, b) => a.id - b.id)
 					.forEach((p, i, panels) => {
-						panels[`*ctx:${p.id}`] = p;
-						p.parent = p.ctxId ? panels[p.ctxKey] : null;
-						p.group = p.parent ? p.parent.group : p;
-						if(!p.parent) 
-							p.groupIndex = panels
-							 .filter(pi => !pi.parent && pi.flags.important == p.flags.important && pi.flags.support == p.flags.support && pi.flags.ooc == p.flags.ooc)
-							 .indexOf(p);
-						var ctx = (p.parent ? p.parent.ctx : conn).sub(p.query);
-						p.ctx = ctx;
-						ctx.panel = p;
-						ctx.get('', addPanel);
+						Panel.prepare(p, panels).ctx.get('', addPanel);
 					});
 		});
 		
 		function addPanel(text, ctx) {
 			ctx.panel.text = text;
-			Panel.add(Var.study.page.static, ctx.panel);
-			// Panel.add(Var.study.page.temp, ctx, text);
+			Panel.add(ctx.panel, Var.static);
 		}
-		
-		this._layouts.static = Layout.area.bind(Layout);
-		this._layouts.links = Layout.horizontal.bind(Layout);
-		this._layouts.temp = Layout.center.bind(Layout);
 	},
 	
 	unitSize: function(size) {
 		return size / 75;
 	},
 	
-	containerWidth: function() {
+	frameWidth: function() {
 		return window.innerWidth - Const.margin;
 	},
 	
-	containerHeight: function() {
+	frameHeight: function() {
 		return window.innerHeight - 2 * Const.barHeight;
 	},
 	
-	containerUnitWidth: function() {
-		return this.unitSize(this.containerWidth());
+	frameUnitWidth: function() {
+		return this.unitSize(this.frameWidth());
 	},
 	
-	containerUnitHeight: function() {
-		return this.unitSize(this.containerHeight());
+	frameUnitHeight: function() {
+		return this.unitSize(this.frameHeight());
 	},
 	
 	_layouts: new Map(),
-	layout: function(container) {
-		var lo = this._layouts.get(container);
+	layout: function(layer) {
+		var lo = this._layouts.get(layer);
 		if(!lo) {
 			lo = Helper.debounce(function() {
-				var width = this.containerUnitWidth(),
-						height = this.containerUnitHeight(),
-						fit = this._layouts[container.type](container.panels, width, height, 2, 2);
+				var width = this.frameUnitWidth(),
+						height = this.frameUnitHeight(),
+						fit = layer.fit(layer.panels, width, height, 2, 2);
 		
 				if(!fit) return;
 		
@@ -111,15 +111,14 @@ var Page = {
 					}));
 			}.bind(this), 100);
 
-			this._layouts.set(container, lo);
+			this._layouts.set(layer, lo);
 		}
 		
 		lo();
 	},
 	
-	backdrop: function(page, toggle) {
-		var theme = page.study.theme;
-		page.static.panels.forEach(p => theme.backdrop(p, toggle));
+	backdrop: function(toggle) {
+		Var.static.panels.forEach(p => Var.theme.backdrop(p, toggle));
 	}
 }
 

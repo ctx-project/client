@@ -7,14 +7,14 @@
 	}
 	
 	function Viewer(panel) {
-		this.lines = panel.lines;
+		this.items = panel.items;
 		panel.content.innerHTML = `<pre style="line-height:1.4em;margin:0;overflow:auto;height:100%;">${panel.text}</pre>`;
 	}	
 	
 	Viewer.prototype.desired = function() {
 		return [
-			this.lines.map(l => l.length).reduce((a,b) => a + b) / this.lines.length / 10,
-			this.lines.length / 4
+			this.items.map(l => l.length).reduce((a,b) => a + b) / this.items.length / 10,
+			this.items.length / 4
 		];
 	}
 	

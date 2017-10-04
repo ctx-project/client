@@ -1,4 +1,4 @@
-var Layout = {
+var Fit = {
 	area: function(tiles, width, height, minWidth, minHeight) {
 		return 	this.screenArea.apply(this, arguments) || 
 						this.pageArea.apply(this, arguments);
@@ -88,7 +88,7 @@ var Layout = {
 	},
 	
 	horizontal: function(tiles) {
-		var h = Page.containerUnitHeight(),
+		var h = Page.frameUnitHeight(),
 				x = 1 - Const.umargin;
 		return tiles.map((tile) => ({
 			tile: tile.tile || tile, width: tile.width, height: tile.height,
@@ -112,5 +112,18 @@ var Layout = {
 				y: (areaHeight - height) / 2,
 			}
 		}];
-	}
+	},
+	
+	setPanelSize: function(panel, margin) {
+		panel.desired = panel.viewer.desired();
+		panel.width = Math.ceil(Math.max(panel.desired[0], panel.ctx.query.length / 5)) + Const.hpadding[panel.Viewer.type] + margin;
+		panel.height = Math.ceil(panel.desired[1]) + Const.vpadding[panel.Viewer.type] + margin;
+	},
+	
+	setLinkSize: function(panel) {
+		panel.width = Math.ceil(panel.ctx.query.length / 5) + Const.umargin;
+		panel.height = 1 + Const.umargin;
+	},
+	
+
 }

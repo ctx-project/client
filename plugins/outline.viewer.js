@@ -2,19 +2,19 @@
 	Viewer.name = 'outline';
 	Viewer.type = 'contain';
 	
-	Viewer.sniff = function(lines) {
+	Viewer.sniff = function(items) {
 		return .5;
 	}
 	
 	function Viewer(panel) {
-		this.lines = panel.lines.map(t => t.replace(/\s*~\d*\s*$/, ''));
-		panel.content.innerHTML = `<li>${this.lines.join('</li><li>')}</li>`;
+		this.items = panel.items.map(t => t.replace(/\s*~\d*\s*$/, ''));
+		panel.content.innerHTML = `<li>${this.items.join('</li><li>')}</li>`;
 	}	
 	
 	Viewer.prototype.desired = function() {
 		return [
-			this.lines.map(l => l.length).reduce((a,b) => a + b) / this.lines.length / 7,
-			this.lines.length / 3 + 1
+			this.items.map(l => l.length).reduce((a,b) => a + b) / this.items.length / 7,
+			this.items.length / 3 + 1
 		];
 	}
 	

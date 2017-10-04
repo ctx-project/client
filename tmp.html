@@ -17,6 +17,8 @@
 		align-items: center;
 		justify-content: center;
 		text-shadow: 0 0 5px rgba(80, 120, 120, .9);
+		display: none;
+
 	}
 	big {
 		font-size: 48px;
@@ -56,3 +58,39 @@
 	<small>magnezium</small>
 	<span>280</span>
 </div>
+
+<button onclick="neww()">new</button>
+<button onclick="last()">last</button>
+<button onclick="child()">child</button>
+<button onclick="p()">parent</button>
+<button onclick="lister()">list</button>
+
+<script>
+	var w,
+			hub = hub || window,
+			list = [];
+			
+	hub.list.push(window);
+	
+	function l(o) {console.log(o); return o;}
+	
+	function neww() {
+		w = window.open('tmp.html', Math.random(), "");
+		w.hub = hub;
+	}
+	function last() {
+		w.focus();
+	}
+	function child() {
+		l(w.l({a: 1}));
+	}
+	function p() {
+		l(window.parent1.l({b: 2}));
+		// l(window.parent === window);
+	}
+	
+	function lister() {
+		l(hub.list);
+	}
+
+</script>

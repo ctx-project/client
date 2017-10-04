@@ -9,14 +9,14 @@ var Gestures = {
 			cumulate = e.cumulate,
 			distance = Math.pow(cumulate[0], 2) + Math.pow(cumulate[1], 2),
 			isTap = distance < Const.tapDistance,
-			type = panel.container.type,
-			other = panel.container.page.temp.panels[0];
+			type = panel.layer.type,
+			other = Var.over.panels[0];
 		
 		if(other && other != panel) this.minimize(other);
 
 		if(type == 'links') {
 			if(isTap)
-				this.incorporate(panel, 'temp')
+				this.incorporate(panel, 'over')
 			else if(v == -vy)
 				if(isThrow) this.maximize(panel); else this.incorporate(panel, 'static');
 			else
@@ -37,12 +37,12 @@ var Gestures = {
 			if(isThrow) this.share(panel); else	this.revealRight(panel);
 	},
 	
-	changeContainer: function(panel, type) {
-		var oldContainer = panel.container;
-		Panel.changeContainer(panel, type);
-		Page.layout(oldContainer);
+	changeLayer: function(panel, type) {
+		var oldLayer = panel.layer;
+		Panel.changeLayer(panel, type);
+		Page.layout(oldLayer);
 		Panel.setSize(panel);
-		Page.layout(panel.container);
+		Page.layout(panel.layer);
 	},
 	
 	minimize: function(panel) {
@@ -51,19 +51,19 @@ var Gestures = {
 			return;
 		}
 		
-		if(panel.container.type == 'temp') 
-			Page.backdrop(panel.container.page, false);
+		if(panel.layer.type == 'over') 
+			Page.backdrop(false);
 		panel.flags.link = true;
 		panel.visual.classList.add('link');
-		this.changeContainer(panel, 'links');
+		this.changeLayer(panel, 'links');
 	},
 	
 	incorporate: function(panel, type) {
 		panel.flags.link = false;
 		panel.visual.classList.remove('link');
-		panel.surface.setProperties({zIndex: type == 'temp' ? 1 : 0});
-		Page.backdrop(panel.container.page, type == 'temp');
-		this.changeContainer(panel, type);
+		panel.surface.setProperties({zIndex: type == 'over' ? 1 : 0});
+		Page.backdrop(type == 'over');
+		this.changeLayer(panel, type);
 	},
 	
 	maximize: function(panel) {

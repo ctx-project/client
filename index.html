@@ -1,45 +1,35 @@
 <!DOCTYPE html>
-
-<script src="node_modules/samsarajs/dist/samsara.min.js "></script>
-<link rel="stylesheet" type="text/css" href="node_modules/samsarajs/dist/samsara.css"/>
-<!--https://github.com/jakesgordon/bin-packing-->
-<script src="modules/bin-packing/js/packer.js"></script>
-<link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
-
-<link href="style.css" rel="stylesheet">
-<script src="node_modules/connection/index.js"></script>
-<script src="helper.js"></script>
-<script src="const.js"></script>
-<script src="app.js"></script>
-<script src="study.js"></script>
-<script src="page.js"></script>
-<script src="panel.js"></script>
-<script src="layout.js"></script>
-<script src="gestures.js"></script>
-
-<script src="plugins.js"></script>
-<script src="plugins/raw.viewer.js"></script>
-<script src="plugins/outline.viewer.js"></script>
-<script async defer	src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdBe_ui57UfS23cCnSjngyd6NQskwhDZY"></script>
-<script src="plugins/map.viewer.js"></script>
-<script src="plugins/material.theme.js"></script>
+<html>
+<head>
+	<script src="node_modules/samsarajs/dist/samsara.min.js "></script>
+	<link rel="stylesheet" type="text/css" href="node_modules/samsarajs/dist/samsara.css"/>
+	<!--https://github.com/jakesgordon/bin-packing-->
+	<script src="modules/bin-packing/js/packer.js"></script>
+	<link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
+	
+	<link href="style.css" rel="stylesheet">
+	<script src="node_modules/connection/index.js"></script>
+	<script src="helper.js"></script>
+	<script src="const.js"></script>
+	<!--<script src="lang.js"></script>-->
+	<script src="panel.js"></script>
+	<script src="fit.js"></script>
+	<script src="gestures.js"></script>
+	<script src="page.js"></script>
+	
+	<script src="plugins.js"></script>
+	<script src="plugins/raw.viewer.js"></script>
+	<script src="plugins/outline.viewer.js"></script>
+	<script async defer	src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdBe_ui57UfS23cCnSjngyd6NQskwhDZY"></script>
+	<script src="plugins/map.viewer.js"></script>
+	<script src="plugins/material.theme.js"></script>
+</head>
 
 <body>
 	<div class="plus"></div>
+
+	<script>
+		Page.init();
+	</script>
 </body>
-
-<script>
-			
-	App.init();
-	
-	Study.init();
-	
-	Page.init();
-
-	window.onresize = () => { 
-		Page.layout(Var.study.page.static);
-		Page.layout(Var.study.page.temp);
-	}
-
-</script>
-
+</html>
