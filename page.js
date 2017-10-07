@@ -20,7 +20,15 @@ var Page = {
 		Var.context = new Context();
 		Var.context.mount(document.body);
 		
-		Var.container = Var.context.add({});
+		Var.container = Var.context
+			.add({
+				// transform: Transform.scale([.5, .5, .5])
+				//proportions: [.5, .5],
+			});
+			// .add(new ContainerSurface({
+			// 	proportions: [.5, .5],
+			// 	properties: {background: 'red'}
+			// }));
 		Var.frame = Var.container.add({
 			margins: [Const.margin, 2 * Const.barHeight], 
 			origin: [1, .5], 
