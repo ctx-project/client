@@ -1,4 +1,5 @@
 var l = function(o) {console.log.apply(null, arguments); return o;};
+var s = new Samsara.DOM.Surface({properties: {background: 'red'}});
 
 var Helper = {
 	debounce: function(func, wait, immediate) {
