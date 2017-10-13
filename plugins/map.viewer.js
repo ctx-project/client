@@ -1,3 +1,6 @@
+// <!--<script async defer	src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdBe_ui57UfS23cCnSjngyd6NQskwhDZY"></script>-->
+
+
 (function() {
 	Viewer.name = 'map';
 	Viewer.type = 'cover';

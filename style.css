@@ -3,14 +3,13 @@ body{
 	padding: 0;
 	margin: 0;
 }
-.search-bar {
+.input-bar {
 	background: white;
 	border: none;
 	border-radius: 25px;
 	outline: none;
 	font-size: 18px;
 	height: 50px;
-	margin-top: 25px;
 	padding: 0 25px;
 }
 .shadow {

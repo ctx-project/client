@@ -8,13 +8,10 @@ var View = Samsara.Core.View,
 export default View.extend({
 	defaults: {
 		origin: [.5, 0],
-		inputClasses: ['input-bar', 'shadow'],
+		topicClasses: ['topic'],
 	},
 	
 	initialize: function(opts) {
-		this.add(new Surface({
-			tagName: 'input',
-			classes: opts.inputClasses
-		}));		
+		this.add(s);		
 	}
 });
