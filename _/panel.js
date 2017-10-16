@@ -101,7 +101,7 @@ var Panel = {
 
 	move: function(panel, pos) {
 		panel.proportions.set(pos.proportions, Const.curve);
-		panel.align.reset(panel.alignAcc.get());
+		panel.align.reset(panel.alignAcc.get());main
 		panel.align.set(pos.align, Const.curve);
 		panel.last[panel.layer.type] = pos;
 	},
