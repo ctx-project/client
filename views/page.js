@@ -28,9 +28,55 @@ export default View.extend({
 			properties: {background: 'red'}
 		});
 		
-		this.layout = new FluidLayout(getFluidSetup({
-			properties: {zIndex: 1}
-		}, this));
+		this.layout = new FluidLayout({
+			properties: {zIndex: 1},
+			layers: [{
+					name: 'main',
+					items: Array(3).fill().map((_, i) => new Surface({properties: {background: colors[i % colors.length]}, content: i})),
+					corners: [0, options.barHeight, 1, -options.barHeight],
+					// surface: {properties: {background: 'rgba(0,255,0,.5)'}},
+					birth: {position: [window.innerWidth / 2, window.innerHeight / 2]},
+					packer: (items, size) => randomPacker(items, size, 150, mainSizer),
+					handler: this.mainHandler.bind(this),
+					baseZ: 0, dragZ: 1
+				}, {
+					name: 'focus',
+					items: [],
+					corners: [0, options.barHeight, 1, -options.barHeight],
+					// surface: {properties: {background: 'rgba(0,0,255,.3)'}},
+					birth: {position: [window.innerWidth / 2, window.innerHeight / 2]},
+					death: {position: [window.innerWidth / 2, window.innerHeight]},
+					packer: (items, size) => horizontalPacker(items, size, focusSizer),
+					handler: this.focusHandler.bind(this),
+					baseZ: 2, dragZ: 3
+				}, {
+					name: 'over',
+					items: [],
+					corners: [0, options.barHeight, 1, -options.barHeight],
+					// surface: {properties: {background: 'rgba(255,0,0,.3)'}},
+					packer: (items, size) => centerPacker(items, size, overSizer),
+					// handler: this.overHandler.bind(this),
+					baseZ: 4, dragZ: 5
+				}, {
+					name: 'leads',
+					items: [],
+					corners: [0, -options.barHeight, 1, 1],
+					// surface: {properties: {background: 'rgba(0,0,255,.3)'}},
+					birth: {position: [window.innerWidth, window.innerHeight]},
+					packer: (items, size) => randomPacker(items, size, 150, leadsSizer),
+					// handler: this.leadsHandler.bind(this),
+					baseZ: 6, dragZ: 7
+				}, {
+					name: 'maxi',
+					items: [],
+					corners: [0, 0, 1, 1],
+					// surface: {properties: {background: 'rgba(0,0,0,.5)'}},
+					packer: (items, size) => maxiPacker(items, size),
+					// handler: this.maxiHandler.bind(this),
+					baseZ: 8, dragZ: 9
+				},
+			]
+		});
 		
 		this.overlay = new Surface({
 			properties: {zIndex: 2, display: 'none'},
@@ -65,160 +111,119 @@ export default View.extend({
 		var props = this.overlay.getProperties();
 		props.display = this.minimised ? 'block' : 'none';
 		this.overlay.setProperties(props);
-	}
+	},
+	
+	getFocus: function() {
+		return this.layout.layers.focus.items[0];
+	},
+	
+	getOver: function() {
+		return this.layout.layers.over.items[0];
+	},
+	
+	mainHandler: function (e, panel) {
+		this.defocus();
+		this.deover();
+		
+		if(e.tapped)	
+			this.focus(panel);
+		else switch(e.orientation) {
+			case 'bottom': if (e.thrown) this.minimize(panel); else this.revealTop(panel); break;
+			case 'top': if (e.thrown) this.maximize(panel); else this.prioritize(panel); break;
+			case 'right': if (e.thrown) this.pin(panel); else this.revealLeft(panel); break;
+			case 'left': if (e.thrown) this.navigate(panel); else this.embed(panel); break;
+		}
+	},
+	
+	focusHandler: function (e, panel) {
+		if(e.tapped && this.layout.getItemIndex(panel) == 0)
+			this.defocus();
+		else
+			this.layout.returnItem(panel);
+	},
+	
+	overHandler: function (e, panel) {
+	},
+	
+	leadsHandler: function (e, panel) {
+	},
+	
+	maxiHandler: function (e, panel) {
+	},
+	
+	focus: function(panel) {
+		var layout = this.layout,
+				main = layout.layers.main,
+				focus = layout.layers.focus;
+		
+		layout.switchLayer(panel, focus);
+		getFocusExtra().forEach(panel => layout.addItem(panel, focus));
+		layout.layoutLayer(focus);
+		layout.setLayerOpacity(main, .5);
+	},
+	
+	defocus: function() {
+		var layout = this.layout,
+				main = layout.layers.main,
+				focus = layout.layers.focus,
+				count = focus.items.length;
+		
+		if(!count) return;
+		
+		for(let ix = 0; ix < count; ix++)
+			if(!ix) layout.switchLayer(focus.items[0], main);
+			else layout.removeItem(focus.items[0]);
+
+		layout.layoutLayer(main);
+		layout.setLayerOpacity(main, 1);
+	},
+	
+	over: function(panel) {
+		var l = this.layout;
+		// l.switchLayer(panel, l.layers.focus);
+		// l.setLayerOpacity(l.layers.main, .5);
+	},
+	
+	deover: function() {
+		
+	},
+	
+	minimize: function(panel) {
+		l('minimize');
+	},
+	
+	maximize: function(panel) {
+		l('maximize');
+	},
+	
+	prioritize: function(panel) {
+		l('prioritize');
+	},
+	
+	revealTop: function(panel) {
+		l('revealTop');
+	},
+	
+	revealLeft: function(panel) {
+		l('revealLeft');
+	},
+	
+	pin: function(panel) {
+		l('pin');
+	},
+	
+	embed: function(panel) {
+		l('embed');
+	},
+	
+	navigate: function(panel) {
+		l('navigate');
+	},
 });
 
-function getFluidSetup(setup, page) {
-	var options = page.options;
-	setup.layers = [{
-			name: 'main',
-			items: getPanels(10, page),
-			corners: [0, options.barHeight, 1, -options.barHeight],
-			// surface: {properties: {background: 'rgba(0,255,0,.5)'}},
-			birth: {position: [window.innerWidth / 2, window.innerHeight / 2]},
-			packer: (items, size) => randomPacker(items, size, 150, sizer),
-		}, {
-			name: 'focus',
-			items: [],
-			corners: [0, options.barHeight, 1, -options.barHeight],
-			// surface: {properties: {background: 'rgba(0,0,255,.3)'}},
-		}, {
-			name: 'over',
-			items: [],
-			corners: [0, options.barHeight, 1, -options.barHeight],
-			// surface: {properties: {background: 'rgba(255,0,0,.3)'}},
-		}, {
-			name: 'leads',
-			items: [],
-			corners: [0, -options.barHeight, 1, 1],
-			// surface: {properties: {background: 'rgba(0,0,255,.3)'}},
-			birth: {position: [window.innerWidth, window.innerHeight]}
-		}, {
-			name: 'maxi',
-			items: [],
-			corners: [0, 0, 1, 1],
-			// surface: {properties: {background: 'rgba(0,0,0,.5)'}},
-		},
-	];
-	
-	return setup;
-}
-
-function getPanels(count, page) {
-	var panels = [];
-	for(let i = 0; i < count; i++)
-		panels.push(buildPanel(i, page));
-	return panels;
-}
+//---
 
 var colors = ["#b71c1c", "#880e4f", "#4a148c", "#311b92", "#1a237e", "#006064", "#33691e", "#ff6f00", "#e65100"];
-
-function buildPanel(ix, page) {
-	var s = new Surface({properties: {background: colors[ix % colors.length]}, content: ix}),
-			handle = new Samsara.Inputs.TouchInput();
-
-	handle.subscribe(s);
-	handle.on('start', e => page.layout.startDragItem(s));
-	handle.on('update', e => page.layout.dragItem(s, e.delta));
-	handle.on('end', e => {
-		page.layout.endDragItem(s);
-		screen(s, e, page);
-		// page.layout.returnItem(s);
-		// layout.switchLayer(s1, layout.layers.l2); 
-		// layout.setLayerOpacity(layout.layers.l1, .5);
-	});
-
-	return s;
-}
-var Const = {
-	margin: 10,
-	umargin: 0.27,
-	barHeight: 32,
-	throwSpeed: 7,
-	tapDistance: 10,
-	curve: {curve : 'easeOut', duration: 500},
-	vpadding: {contain: 1.33, cover: 0, small: 1},
-	hpadding: {contain: .66, cover: 0, small: .5},
-}
-
-function screen(panel, e, page) {
-	var vx = e.velocity[0],
-		vy = e.velocity[1],
-		vxa = Math.abs(vx),
-		vya = Math.abs(vy),
-		v = Math.max(vxa, vya),
-		isThrow = vx * vx + vy * vy > Const.throwSpeed,
-		cumulate = e.cumulate,
-		distance = Math.pow(cumulate[0], 2) + Math.pow(cumulate[1], 2),
-		isTap = distance < Const.tapDistance,
-		// type = panel.layer.type,
-		other = page.layout.layers.over.items[0];
-	
-	// if(other && other != panel) minimize(other);
-
-	// if(type == 'links') {
-	// 	if(isTap)
-	// 		this.incorporate(panel, 'over')
-	// 	else if(v == -vy)
-	// 		if(isThrow) this.maximize(panel, page); else this.incorporate(panel, 'static');
-	// 	else
-	// 		page.layout.returnItem(panel);
-			
-	// 	return;	
-	// }	
-
-	if(isTap)	
-		if(type == 'static') ; else incorporate(panel, 'static');
-	else if(v == vy)
-		if(isThrow) minimize(panel, page); else revealTop(panel, page);
-	else if(v == -vy) 
-		if(isThrow) maximize(panel, page); else revealBottom(panel, page);
-	else if(v == vx)
-		if(isThrow) stikyfy(panel, page); else revealLeft(panel, page);
-	else 
-		if(isThrow) share(panel, page); else revealRight(panel, page);
-}
-
-function minimize(panel, page) {
-	page.layout.switchLayer(panel, page.layout.layers.leads);
-}
-
-function incorporate(panel, page, type) {
-}
-
-function maximize(panel, page) {
-	page.layout.returnItem(panel);
-}
-
-function share(panel, page) {
-	page.layout.returnItem(panel);
-}
-
-function stikyfy(panel, page) {
-	page.layout.returnItem(panel);
-}
-
-function revealTop(panel, page) {
-	page.layout.returnItem(panel);
-}
-
-function revealBottom(panel, page) {
-	page.layout.returnItem(panel);
-}
-
-function revealLeft(panel, page) {
-	page.layout.returnItem(panel);
-}
-
-function revealRight(panel, page) {
-	page.layout.returnItem(panel);
-}
-
-function tap(e) {
-	l(e.path[1].panel);
-}			
-
-
 
 function randomPacker(items, size, granularity, sizer) {
 	Math.random = (function() {
@@ -239,18 +244,51 @@ function randomPacker(items, size, granularity, sizer) {
 		item, 
 		size: sizer(item), 
 		position: [Math.min(Math.random(), .8) * size[0], Math.min(Math.random(), .8) * size[1]], 
-		margins: [0, 0]
+		margins: [12, 12]
 	}));
 } 
 
-function sizer(item) {
-	 return [100, 100];
+function horizontalPacker(items, size, sizer) {
+	var distance = 0;
+	return items.map((item, ix) => ({
+		item, 
+		size: sizer(item), 
+		position: [distance, (size[1] - sizer(item)[1]) / 2],
+		margins: [50, 50],
+		cuc: distance += sizer(item)[0]
+	}));
 }
-		
-		
-		
-		
 
+function centerPacker(items, size, sizer) {
+	var itemSize = sizer(items[0]);
+	return items.map((item, ix) => ({
+		item, 
+		size: itemSize, 
+		position: [(size[0] - itemSize[0]) / 2, (size[1] - itemSize[1]) / 2],
+		margins: [0, 0]
+	}));
+}
+
+function maxiPacker(items, size) {
+	return items.map((item, ix) => ({
+		item, 
+		size, 
+		position: [0, 0],
+		margins: [0, 0]
+	}));
+}
+
+function mainSizer(item) { return [300, 300]; }
+function focusSizer(item) { return [400, 400]; }
+function overSizer(item) { return [500, 500]; }
+function leadsSizer(item) { return [200, 30]; }
+
+function getFocusExtra() {
+	return [
+		new Surface({properties: {background: 'lightgrey'}, content: 'new'}),
+		new Surface({properties: {background: 'lightgrey'}, content: 'new'}),
+	]
+}
 
 
 
@@ -312,7 +350,7 @@ function sizer(item) {
 // 			type: 'links', 
 // 			panels: [], 
 // 			fit: Fit.horizontal.bind(Fit),
-// 			setSize: panel => Fit.setLinkSize(panel, page)
+// 			setSize: panel => Fit.setLinkSize(panel)
 // 		};
 
 // 		window.onresize = () => { 
