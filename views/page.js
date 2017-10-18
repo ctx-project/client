@@ -32,7 +32,7 @@ export default View.extend({
 			properties: {zIndex: 1},
 			layers: [{
 					name: 'main',
-					items: Array(3).fill().map((_, i) => new Surface({properties: {background: colors[i % colors.length]}, content: i})),
+					items: Array(10).fill().map((_, i) => new Surface({properties: {background: colors[i % colors.length]}, content: i})),
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					// surface: {properties: {background: 'rgba(0,255,0,.5)'}},
 					birth: {position: [window.innerWidth / 2, window.innerHeight / 2]},
@@ -156,10 +156,10 @@ export default View.extend({
 				main = layout.layers.main,
 				focus = layout.layers.focus;
 		
-		layout.switchLayer(panel, focus);
+		layout.switchItem(panel, focus);
 		getFocusExtra().forEach(panel => layout.addItem(panel, focus));
 		layout.layoutLayer(focus);
-		layout.setLayerOpacity(main, .5);
+		layout.transparentizeLayer(main, .5);
 	},
 	
 	defocus: function() {
@@ -171,17 +171,17 @@ export default View.extend({
 		if(!count) return;
 		
 		for(let ix = 0; ix < count; ix++)
-			if(!ix) layout.switchLayer(focus.items[0], main);
+			if(!ix) layout.switchItem(focus.items[0], main);
 			else layout.removeItem(focus.items[0]);
 
 		layout.layoutLayer(main);
-		layout.setLayerOpacity(main, 1);
+		layout.transparentizeLayer(main, 1);
 	},
 	
 	over: function(panel) {
 		var l = this.layout;
-		// l.switchLayer(panel, l.layers.focus);
-		// l.setLayerOpacity(l.layers.main, .5);
+		// l.switchItem(panel, l.layers.focus);
+		// l.transparentizeLayer(l.layers.main, .5);
 	},
 	
 	deover: function() {
