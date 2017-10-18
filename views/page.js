@@ -27,53 +27,59 @@ export default View.extend({
 			size: [undefined, options.barHeight],
 			properties: {background: 'red'}
 		});
-		
+
 		this.layout = new FluidLayout({
 			properties: {zIndex: 1},
 			layers: [{
 					name: 'main',
 					items: Array(10).fill().map((_, i) => new Surface({properties: {background: colors[i % colors.length]}, content: i})),
 					corners: [0, options.barHeight, 1, -options.barHeight],
-					// surface: {properties: {background: 'rgba(0,255,0,.5)'}},
+					baseZ: 0, dragZ: 1,
 					birth: {position: [window.innerWidth / 2, window.innerHeight / 2]},
 					packer: (items, size) => randomPacker(items, size, 150, mainSizer),
-					handler: this.mainHandler.bind(this),
-					baseZ: 0, dragZ: 1
+					handler: () => this.defocus().deover(),
+					gestures: {
+						'tap': this.focus.bind(this),
+						'bottom.throw': this.minimize.bind(this),
+						'bottom.drag': this.revealTop.bind(this),
+						'top.throw': this.maximize.bind(this),
+						'top.drag': this.prioritize.bind(this),
+						'right.throw': this.pin.bind(this),
+						'right.drag': this.revealLeft.bind(this),
+						'left.throw': this.navigate.bind(this),
+						'left.drag': this.embed.bind(this),
+					}
 				}, {
 					name: 'focus',
-					items: [],
 					corners: [0, options.barHeight, 1, -options.barHeight],
-					// surface: {properties: {background: 'rgba(0,0,255,.3)'}},
+					baseZ: 2, dragZ: 3,
 					birth: {position: [window.innerWidth / 2, window.innerHeight / 2]},
-					death: {position: [window.innerWidth / 2, window.innerHeight]},
 					packer: (items, size) => horizontalPacker(items, size, focusSizer),
-					handler: this.focusHandler.bind(this),
-					baseZ: 2, dragZ: 3
+					handler: () => this.deover(),
+					gestures: {
+						'parent': 'main',
+						'tap': this.defocus.bind(this),
+					}
 				}, {
 					name: 'over',
-					items: [],
 					corners: [0, options.barHeight, 1, -options.barHeight],
-					// surface: {properties: {background: 'rgba(255,0,0,.3)'}},
+					baseZ: 4, dragZ: 5,
 					packer: (items, size) => centerPacker(items, size, overSizer),
-					// handler: this.overHandler.bind(this),
-					baseZ: 4, dragZ: 5
+					
 				}, {
 					name: 'leads',
-					items: [],
 					corners: [0, -options.barHeight, 1, 1],
-					// surface: {properties: {background: 'rgba(0,0,255,.3)'}},
+					baseZ: 6, dragZ: 7,
 					birth: {position: [window.innerWidth, window.innerHeight]},
 					packer: (items, size) => randomPacker(items, size, 150, leadsSizer),
-					// handler: this.leadsHandler.bind(this),
-					baseZ: 6, dragZ: 7
+					handler: () => this.deover(),
+					
 				}, {
 					name: 'maxi',
-					items: [],
 					corners: [0, 0, 1, 1],
-					// surface: {properties: {background: 'rgba(0,0,0,.5)'}},
+					baseZ: 8, dragZ: 9,
 					packer: (items, size) => maxiPacker(items, size),
-					// handler: this.maxiHandler.bind(this),
-					baseZ: 8, dragZ: 9
+					
 				},
 			]
 		});
@@ -112,52 +118,13 @@ export default View.extend({
 		props.display = this.minimised ? 'block' : 'none';
 		this.overlay.setProperties(props);
 	},
-	
-	getFocus: function() {
-		return this.layout.layers.focus.items[0];
-	},
-	
-	getOver: function() {
-		return this.layout.layers.over.items[0];
-	},
-	
-	mainHandler: function (e, panel) {
-		this.defocus();
-		this.deover();
-		
-		if(e.tapped)	
-			this.focus(panel);
-		else switch(e.orientation) {
-			case 'bottom': if (e.thrown) this.minimize(panel); else this.revealTop(panel); break;
-			case 'top': if (e.thrown) this.maximize(panel); else this.prioritize(panel); break;
-			case 'right': if (e.thrown) this.pin(panel); else this.revealLeft(panel); break;
-			case 'left': if (e.thrown) this.navigate(panel); else this.embed(panel); break;
-		}
-	},
-	
-	focusHandler: function (e, panel) {
-		if(e.tapped && this.layout.getItemIndex(panel) == 0)
-			this.defocus();
-		else
-			this.layout.returnItem(panel);
-	},
-	
-	overHandler: function (e, panel) {
-	},
-	
-	leadsHandler: function (e, panel) {
-	},
-	
-	maxiHandler: function (e, panel) {
-	},
-	
+
 	focus: function(panel) {
 		var layout = this.layout,
 				main = layout.layers.main,
 				focus = layout.layers.focus;
 		
 		layout.switchItem(panel, focus);
-		getFocusExtra().forEach(panel => layout.addItem(panel, focus));
 		layout.layoutLayer(focus);
 		layout.transparentizeLayer(main, .5);
 	},
@@ -168,14 +135,15 @@ export default View.extend({
 				focus = layout.layers.focus,
 				count = focus.items.length;
 		
-		if(!count) return;
+		if(!count) return this;
 		
 		for(let ix = 0; ix < count; ix++)
-			if(!ix) layout.switchItem(focus.items[0], main);
-			else layout.removeItem(focus.items[0]);
+			layout.switchItem(focus.items[0], main);
 
 		layout.layoutLayer(main);
 		layout.transparentizeLayer(main, 1);
+		
+		return this;
 	},
 	
 	over: function(panel) {
@@ -282,14 +250,6 @@ function mainSizer(item) { return [300, 300]; }
 function focusSizer(item) { return [400, 400]; }
 function overSizer(item) { return [500, 500]; }
 function leadsSizer(item) { return [200, 30]; }
-
-function getFocusExtra() {
-	return [
-		new Surface({properties: {background: 'lightgrey'}, content: 'new'}),
-		new Surface({properties: {background: 'lightgrey'}, content: 'new'}),
-	]
-}
-
 
 
 
