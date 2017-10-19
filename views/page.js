@@ -53,12 +53,11 @@ export default View.extend({
 					name: 'focus',
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 2, dragZ: 3,
-					birth: {position: [window.innerWidth / 2, window.innerHeight / 2]},
-					packer: (items, size) => horizontalPacker(items, size, focusSizer),
 					handler: () => this.deover(),
 					gestures: {
 						'parent': 'main',
 						'tap': this.defocus.bind(this),
+						'default': item => this.layout.returnItem(item)
 					}
 				}, {
 					name: 'over',
@@ -124,9 +123,8 @@ export default View.extend({
 				main = layout.layers.main,
 				focus = layout.layers.focus;
 		
-		layout.switchItem(panel, focus);
-		layout.layoutLayer(focus);
-		layout.transparentizeLayer(main, .5);
+		layout.projectItem(panel, focus);
+		layout.setLayerOpacity(main, .5);
 	},
 	
 	defocus: function() {
@@ -137,11 +135,8 @@ export default View.extend({
 		
 		if(!count) return this;
 		
-		for(let ix = 0; ix < count; ix++)
-			layout.switchItem(focus.items[0], main);
-
-		layout.layoutLayer(main);
-		layout.transparentizeLayer(main, 1);
+		layout.backLayer(focus);
+		layout.setLayerOpacity(main, 1);
 		
 		return this;
 	},
@@ -149,7 +144,7 @@ export default View.extend({
 	over: function(panel) {
 		var l = this.layout;
 		// l.switchItem(panel, l.layers.focus);
-		// l.transparentizeLayer(l.layers.main, .5);
+		// l.opacityLayer(l.layers.main, .5);
 	},
 	
 	deover: function() {
