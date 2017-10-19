@@ -56,8 +56,8 @@ export default View.extend({
 					handler: () => this.deover(),
 					gestures: {
 						'parent': 'main',
-						'tap': this.defocus.bind(this),
-						'default': item => this.layout.returnItem(item)
+						'tap': item => this.defocus().focus(item),
+						// 'default': item => this.layout.returnItem(item)
 					}
 				}, {
 					name: 'over',
@@ -78,7 +78,10 @@ export default View.extend({
 					corners: [0, 0, 1, 1],
 					baseZ: 8, dragZ: 9,
 					packer: (items, size) => maxiPacker(items, size),
-					
+					gestures: {
+						'parent': 'focus',
+						'bottom.throw': this.normalize.bind(this),
+					}
 				},
 			]
 		});
@@ -124,19 +127,24 @@ export default View.extend({
 				focus = layout.layers.focus;
 		
 		layout.projectItem(panel, focus);
-		layout.setLayerOpacity(main, .5);
+		add();
+		add();
+
+		layout.setLayerOpacity(main, .5).transformLayer(main, {scale: [.5, .5, 1]});
+		
+		function add() {
+			var item = main.items[Math.floor(Math.random() * main.items.length)];
+			if(item != panel) layout.projectItem(item, focus);
+		}
+	},
+	
+	hasItems: function(layer) {
+		return this.layout.getLayer(layer).items.length;
 	},
 	
 	defocus: function() {
-		var layout = this.layout,
-				main = layout.layers.main,
-				focus = layout.layers.focus,
-				count = focus.items.length;
-		
-		if(!count) return this;
-		
-		layout.backLayer(focus);
-		layout.setLayerOpacity(main, 1);
+		if(this.hasItems('focus'))
+			this.layout.backLayer('focus').setLayerOpacity('main', 1).retransformLayer('main');
 		
 		return this;
 	},
@@ -156,7 +164,11 @@ export default View.extend({
 	},
 	
 	maximize: function(panel) {
-		l('maximize');
+		this.layout.projectItem(panel, 'maxi').layoutLayer('maxi');
+	},
+	
+	normalize: function(panel) {
+		this.layout.backItem(panel).returnItem(panel);
 	},
 	
 	prioritize: function(panel) {
