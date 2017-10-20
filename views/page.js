@@ -1,18 +1,20 @@
 import FluidLayout from '../lib/FluidLayout.js'
+import * as Pack from '../lib/pack.js'
+
 
 var View = Samsara.Core.View,
 		Surface = Samsara.DOM.Surface,
 		ContainerSurface = Samsara.DOM.ContainerSurface,
 		Transform = Samsara.Core.Transform,
 		Transitionable = Samsara.Core.Transitionable,
-		Stream = Samsara.Streams.Stream,
 		TouchInput = Samsara.Inputs.TouchInput;
 
 export default View.extend({
 	defaults: {
-		transition: {curve: 'easeInCubic', duration: 150 },
+		transition: {curve: 'easeInCubic', duration: 170 },
 		minimised: false,
-		barHeight: 50
+		barHeight: 50,
+		margin: 12
 	},
 	
 	initialize: function(options) {
@@ -35,7 +37,7 @@ export default View.extend({
 					items: Array(10).fill().map((_, i) => new Surface({properties: {background: colors[i % colors.length]}, content: i})),
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 0, //dragZ: 1,
-					packer: (items, size) => randomPacker(items, size, 150, mainSizer),
+					packer: (items, size) => Pack.randomPack(items, size, () => [300, 300]),
 					handler: () => this.defocus().deover(),
 					gestures: {
 						'tap': this.focus.bind(this),
@@ -54,30 +56,38 @@ export default View.extend({
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 2, //dragZ: 3,
 					transform: {scale: [1.1, 1.1, 1]},
-					handler: () => this.deover(),
+					handler: this.deover.bind(this),
 					gestures: {
 						'parent': 'main',
 						'tap': item => this.defocus()//.focus(item),
 					}
 				}, {
+					name: 'leads',
+					corners: [options.margin, -options.barHeight, 1, 1],
+					baseZ: 6, //dragZ: 7,
+					birth: [1, .5],
+					packer: (items, size) => Pack.horizontalLinePack(items, size, () => [200, 50], options.margin),
+					handler: this.deover.bind(this),
+					gestures: {
+						'tap': this.over.bind(this),
+						'top.drag': this.include.bind(this),
+						'top.throw': this.maximize.bind(this),
+					}
+				}, {
 					name: 'over',
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 4, //dragZ: 5,
-					packer: (items, size) => centerPacker(items, size, overSizer),
-					
-				}, {
-					name: 'leads',
-					corners: [0, -options.barHeight, 1, 1],
-					baseZ: 6, //dragZ: 7,
-					birth: [1, .5],
-					packer: (items, size) => randomPacker(items, size, 150, leadsSizer),
-					handler: () => this.deover(),
-					
+					packer: (items, size) => Pack.containPack(items, size, () => [300, 300], [2 * options.margin, 2 * options.margin]),
+					gestures: {
+						'tap': this.include.bind(this),
+						'top': this.maximize.bind(this),
+						'bottom': this.reminimize.bind(this),
+					}
 				}, {
 					name: 'maxi',
 					corners: [0, 0, 1, 1],
 					baseZ: 8, //dragZ: 9,
-					packer: (items, size) => maxiPacker(items, size),
+					packer: (items, size) => Pack.fillPack(items, size),
 					gestures: {
 						'parent': 'focus',
 						'tap': () => {},
@@ -106,7 +116,7 @@ export default View.extend({
 		
 		this.minimised = false;
 		this.handle = new TouchInput();
-		this.handle.subscribe(this.container);
+		this.handle.subscribe(this.menu);
 		this.handle.subscribe(this.overlay);
 		this.handle.on('end', this.toggle.bind(this));
 		
@@ -151,18 +161,26 @@ export default View.extend({
 		return this;
 	},
 	
+	minimize: function(panel) {
+		this.layout.switchItem(panel, 'leads').layoutLayer('leads').layoutLayer('main');
+	},
+	
+	reminimize: function(panel) {
+		this.layout.backItem(panel).returnItem(panel);
+	},
+	
 	over: function(panel) {
-		var l = this.layout;
-		// l.switchItem(panel, l.layers.focus);
-		// l.opacityLayer(l.layers.main, .5);
+		this.layout.projectItem(panel, 'over').layoutLayer('over');
 	},
 	
 	deover: function() {
-		
+		if(this.hasItems('over'))
+			this.layout.backLayer('over').layoutLayer('leads');
 	},
 	
-	minimize: function(panel) {
-		l('minimize');
+	include: function(panel) {
+		this.defocus();
+		this.layout.switchItem(panel, 'main').layoutLayer('leads').layoutLayer('main');
 	},
 	
 	maximize: function(panel) {
@@ -171,6 +189,10 @@ export default View.extend({
 	
 	normalize: function(panel) {
 		this.layout.backItem(panel).returnItem(panel);
+	},
+		
+	navigate: function(panel) {
+		l('navigate');
 	},
 	
 	prioritize: function(panel) {
@@ -192,73 +214,11 @@ export default View.extend({
 	embed: function(panel) {
 		l('embed');
 	},
-	
-	navigate: function(panel) {
-		l('navigate');
-	},
 });
 
 //---
 
 var colors = ["#b71c1c", "#880e4f", "#4a148c", "#311b92", "#1a237e", "#006064", "#33691e", "#ff6f00", "#e65100"];
-
-function randomPacker(items, size, granularity, sizer) {
-	Math.random = (function() {
-		var seed = 0x2F6E2B1;
-		return function() {
-			// Robert Jenkins’ 32 bit integer hash function
-			seed = ((seed + 0x7ED55D16) + (seed << 12))	& 0xFFFFFFFF;
-			seed = ((seed ^ 0xC761C23C) ^ (seed >>> 19)) & 0xFFFFFFFF;
-			seed = ((seed + 0x165667B1) + (seed << 5))	 & 0xFFFFFFFF;
-			seed = ((seed + 0xD3A2646C) ^ (seed << 9))	 & 0xFFFFFFFF;
-			seed = ((seed + 0xFD7046C5) + (seed << 3))	 & 0xFFFFFFFF;
-			seed = ((seed ^ 0xB55A4F09) ^ (seed >>> 16)) & 0xFFFFFFFF;
-			return (seed & 0xFFFFFFF) / 0x10000000;
-		};
-	}());
-	
-	return items.map((item, ix) => ({
-		item, 
-		size: sizer(item), 
-		position: [Math.min(Math.random(), .8) * size[0], Math.min(Math.random(), .8) * size[1]], 
-		margins: [12, 12]
-	}));
-} 
-
-function horizontalPacker(items, size, sizer) {
-	var distance = 0;
-	return items.map((item, ix) => ({
-		item, 
-		size: sizer(item), 
-		position: [distance, (size[1] - sizer(item)[1]) / 2],
-		margins: [50, 50],
-		cuc: distance += sizer(item)[0]
-	}));
-}
-
-function centerPacker(items, size, sizer) {
-	var itemSize = sizer(items[0]);
-	return items.map((item, ix) => ({
-		item, 
-		size: itemSize, 
-		position: [(size[0] - itemSize[0]) / 2, (size[1] - itemSize[1]) / 2],
-		margins: [0, 0]
-	}));
-}
-
-function maxiPacker(items, size) {
-	return items.map((item, ix) => ({
-		item, 
-		size, 
-		position: [0, 0],
-		margins: [0, 0]
-	}));
-}
-
-function mainSizer(item) { return [300, 300]; }
-function focusSizer(item) { return [400, 400]; }
-function overSizer(item) { return [500, 500]; }
-function leadsSizer(item) { return [200, 30]; }
 
 
 

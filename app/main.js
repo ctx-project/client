@@ -1,5 +1,5 @@
-import Launcher from './views/launcher.js'
-import Page from './views/page.js'
+import Launcher from '../views/launcher.js'
+import Page from '../views/page.js'
 
 var Context = Samsara.DOM.Context;
 
