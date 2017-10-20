@@ -34,41 +34,42 @@ export default View.extend({
 					name: 'main',
 					items: Array(10).fill().map((_, i) => new Surface({properties: {background: colors[i % colors.length]}, content: i})),
 					corners: [0, options.barHeight, 1, -options.barHeight],
-					baseZ: 0, dragZ: 1,
+					baseZ: 0, //dragZ: 1,
 					birth: {position: [window.innerWidth / 2, window.innerHeight / 2]},
 					packer: (items, size) => randomPacker(items, size, 150, mainSizer),
 					handler: () => this.defocus().deover(),
 					gestures: {
 						'tap': this.focus.bind(this),
 						'bottom.throw': this.minimize.bind(this),
-						'bottom.drag': this.revealTop.bind(this),
+						// 'bottom.drag': this.revealTop.bind(this),
 						'top.throw': this.maximize.bind(this),
-						'top.drag': this.prioritize.bind(this),
-						'right.throw': this.pin.bind(this),
-						'right.drag': this.revealLeft.bind(this),
+						// 'top.drag': this.prioritize.bind(this),
+						// 'right.throw': this.pin.bind(this),
+						// 'right.drag': this.revealLeft.bind(this),
 						'left.throw': this.navigate.bind(this),
-						'left.drag': this.embed.bind(this),
+						// 'left.drag': this.embed.bind(this),
+						'default': item => this.layout.returnItem(item)
 					}
 				}, {
 					name: 'focus',
 					corners: [0, options.barHeight, 1, -options.barHeight],
-					baseZ: 2, dragZ: 3,
+					baseZ: 2, //dragZ: 3,
+					transform: {scale: [1.1, 1.1, 1]},
 					handler: () => this.deover(),
 					gestures: {
 						'parent': 'main',
-						'tap': item => this.defocus().focus(item),
-						// 'default': item => this.layout.returnItem(item)
+						'tap': item => this.defocus()//.focus(item),
 					}
 				}, {
 					name: 'over',
 					corners: [0, options.barHeight, 1, -options.barHeight],
-					baseZ: 4, dragZ: 5,
+					baseZ: 4, //dragZ: 5,
 					packer: (items, size) => centerPacker(items, size, overSizer),
 					
 				}, {
 					name: 'leads',
 					corners: [0, -options.barHeight, 1, 1],
-					baseZ: 6, dragZ: 7,
+					baseZ: 6, //dragZ: 7,
 					birth: {position: [window.innerWidth, window.innerHeight]},
 					packer: (items, size) => randomPacker(items, size, 150, leadsSizer),
 					handler: () => this.deover(),
@@ -76,10 +77,11 @@ export default View.extend({
 				}, {
 					name: 'maxi',
 					corners: [0, 0, 1, 1],
-					baseZ: 8, dragZ: 9,
+					baseZ: 8, //dragZ: 9,
 					packer: (items, size) => maxiPacker(items, size),
 					gestures: {
 						'parent': 'focus',
+						'tap': () => {},
 						'bottom.throw': this.normalize.bind(this),
 					}
 				},
@@ -105,7 +107,7 @@ export default View.extend({
 		
 		this.minimised = false;
 		this.handle = new TouchInput();
-		this.handle.subscribe(this.menu);
+		this.handle.subscribe(this.container);
 		this.handle.subscribe(this.overlay);
 		this.handle.on('end', this.toggle.bind(this));
 		
@@ -121,6 +123,10 @@ export default View.extend({
 		this.overlay.setProperties(props);
 	},
 
+	hasItems: function(layer) {
+		return this.layout.getLayer(layer).items.length;
+	},
+	
 	focus: function(panel) {
 		var layout = this.layout,
 				main = layout.layers.main,
@@ -131,15 +137,12 @@ export default View.extend({
 		add();
 
 		layout.setLayerOpacity(main, .5).transformLayer(main, {scale: [.5, .5, 1]});
+					// .transformLayer(focus, {scale: [1.1, 1.1, 1]});
 		
 		function add() {
 			var item = main.items[Math.floor(Math.random() * main.items.length)];
 			if(item != panel) layout.projectItem(item, focus);
 		}
-	},
-	
-	hasItems: function(layer) {
-		return this.layout.getLayer(layer).items.length;
 	},
 	
 	defocus: function() {
