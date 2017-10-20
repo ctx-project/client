@@ -35,7 +35,6 @@ export default View.extend({
 					items: Array(10).fill().map((_, i) => new Surface({properties: {background: colors[i % colors.length]}, content: i})),
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 0, //dragZ: 1,
-					birth: {position: [window.innerWidth / 2, window.innerHeight / 2]},
 					packer: (items, size) => randomPacker(items, size, 150, mainSizer),
 					handler: () => this.defocus().deover(),
 					gestures: {
@@ -70,7 +69,7 @@ export default View.extend({
 					name: 'leads',
 					corners: [0, -options.barHeight, 1, 1],
 					baseZ: 6, //dragZ: 7,
-					birth: {position: [window.innerWidth, window.innerHeight]},
+					birth: [1, .5],
 					packer: (items, size) => randomPacker(items, size, 150, leadsSizer),
 					handler: () => this.deover(),
 					
