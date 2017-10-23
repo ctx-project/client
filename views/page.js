@@ -12,32 +12,40 @@ var View = Samsara.Core.View,
 export default View.extend({
 	defaults: {
 		transition: {curve: 'easeInCubic', duration: 170 },
-		minimised: false,
 		barHeight: 50,
-		margin: 12
+		margin: 12,
+		minimized: false,
+		minimizedOpacity: .3,
 	},
 	
 	initialize: function(options) {
+		
 		this.container = new ContainerSurface({
 			origin: [0, 1],
 			properties: {
-				background: 'white'
+				background: '#EEEEEE',
+				overflow: 'hidden'
 			}
 		});
 	
 		this.menu = new ContainerSurface({
 			size: [undefined, options.barHeight],
-			properties: {background: 'red'}
+			// properties: {background: 'red'}
 		});
 
 		this.layout = new FluidLayout({
 			properties: {zIndex: 1},
 			layers: [{
 					name: 'main',
-					items: Array(10).fill().map((_, i) => new Surface({properties: {background: colors[i % colors.length]}, content: i})),
+					items: Array(8).fill().map((_, i) => new Surface({classes: ['panel'], properties: {background: colors[i % colors.length]}, content: i})),
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 0, //dragZ: 1,
-					packer: (items, size) => Pack.randomPack(items, size, () => [300, 300]),
+					packer: (items, size) => Pack.pressureArea(items, size, 
+						() => [350, 450],
+						[t => Math.random()],
+						t => 1,
+						t => false
+					),
 					handler: () => this.defocus().deover(),
 					gestures: {
 						'tap': this.focus.bind(this),
@@ -55,7 +63,7 @@ export default View.extend({
 					name: 'focus',
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 2, //dragZ: 3,
-					transform: {scale: [1.1, 1.1, 1]},
+					transform: {scale: [1.015, 1.015, 1]},
 					handler: this.deover.bind(this),
 					gestures: {
 						'parent': 'main',
@@ -66,7 +74,7 @@ export default View.extend({
 					corners: [options.margin, -options.barHeight, 1, 1],
 					baseZ: 6, //dragZ: 7,
 					birth: [1, .5],
-					packer: (items, size) => Pack.horizontalLinePack(items, size, () => [200, 50], options.margin),
+					packer: (items, size) => Pack.horizontalLine(items, size, () => [200, 50], options.margin),
 					handler: this.deover.bind(this),
 					gestures: {
 						'tap': this.over.bind(this),
@@ -77,7 +85,7 @@ export default View.extend({
 					name: 'over',
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 4, //dragZ: 5,
-					packer: (items, size) => Pack.containPack(items, size, () => [300, 300], [2 * options.margin, 2 * options.margin]),
+					packer: (items, size) => Pack.contain(items, size, () => [300, 300], [2 * options.margin, 2 * options.margin]),
 					gestures: {
 						'tap': this.include.bind(this),
 						'top': this.maximize.bind(this),
@@ -87,7 +95,7 @@ export default View.extend({
 					name: 'maxi',
 					corners: [0, 0, 1, 1],
 					baseZ: 8, //dragZ: 9,
-					packer: (items, size) => Pack.fillPack(items, size),
+					packer: (items, size) => Pack.fill(items, size),
 					gestures: {
 						'parent': 'focus',
 						'tap': () => {},
@@ -114,21 +122,21 @@ export default View.extend({
 			opacity: this.opacity$,
 		}).add(this.container);
 		
-		this.minimised = false;
+		this.minimized = false;
 		this.handle = new TouchInput();
 		this.handle.subscribe(this.menu);
 		this.handle.subscribe(this.overlay);
 		this.handle.on('end', this.toggle.bind(this));
 		
-		if(options.minimised) this.toggle();
+		if(options.minimized) this.toggle();
 	},
 	
 	toggle: function() {
-		this.translate$.set(this.minimised ? 0 : 300, this.options.transition);
-		this.opacity$.set(this.minimised ? 1 : .5, this.options.transition);
-		this.minimised = !this.minimised;
+		this.translate$.set(this.minimized ? 0 : 500, this.options.transition);
+		this.opacity$.set(this.minimized ? 1 : this.options.minimizedOpacity, this.options.transition);
+		this.minimized = !this.minimized;
 		var props = this.overlay.getProperties();
-		props.display = this.minimised ? 'block' : 'none';
+		props.display = this.minimized ? 'block' : 'none';
 		this.overlay.setProperties(props);
 	},
 
@@ -216,83 +224,74 @@ export default View.extend({
 	},
 });
 
+//	 setPanelSize: function(panel, margin) {
+//		 panel.desired = panel.viewer.desired();
+//		 panel.width = Math.ceil(Math.max(panel.desired[0], panel.ctx.query.length / 5)) + Const.hmargins[panel.Viewer.type] + margin;
+//		 panel.height = Math.ceil(panel.desired[1]) + Const.vmargins[panel.Viewer.type] + margin;
+//	 },
+	
+//	 setLinkSize: function(panel) {
+//		 panel.width = Math.ceil(panel.ctx.query.length / 5) + Const.umargin;
+//		 panel.height = 1 + Const.umargin;
+//	 },
+
+//	 area: function(tiles, width, height, minWidth, minHeight) {
+//		 return	 this.screenArea.apply(this, arguments) || 
+//						 this.pageArea.apply(this, arguments);
+//	 },
+
+
+// function getRank() {
+// 	//?many importants, info
+// 	var imp = trial.find(t => t.tile.flags.important),
+// 			supp = trial.find(t => t.tile.flags.support);
+			
+// 	return	 getAreaRank() * .6 + 
+// 					getRightRank(imp) * .15 + getTopRank(imp) * .05 + 
+// 					getRightRank(supp) * .15 + getBottomRank(supp) * .05;
+// }
+// function getAreaRank() {
+// 	return trial.length ? trial.map(t => t.width * t.height).reduce((a,b) => a + b) / trial.map(t => t.tile.width * t.tile.height).reduce((a,b) => a + b) : 1;
+// }
+// function getRightRank(imp) {
+// 	return imp ? imp.fit.x / (trial.map(t => t.fit.x).reduce((a,b) => Math.max(a, b)) || 1) : 1;
+// }
+// function getTopRank(imp) {
+// 	return imp ? 1 - imp.fit.y / (trial.map(t => t.fit.y).reduce((a,b) => Math.max(a, b)) || 1) : 1;
+// }
+// function getBottomRank(imp) {
+// 	return imp ? imp.fit.y / (trial.map(t => t.fit.y).reduce((a,b) => Math.max(a, b)) || 1) : 1;
+// }
+
+// function scale() {
+// 	var scaled = false;
+// 	trial.forEach(t => {
+// 		if(t.width > 4) {t.width = t.width - 1; scaled = true;}
+// 		if(t.height > 4) {t.height = t.height - 1; scaled = true;}
+// 	});
+// 	return scaled;
+// }
+
+// rand: (t1, t2) => t1.rand - t2.rand,
+
+// orders: [
+// 	(t1, t2) => t1.tile.flags.main ? -1 : t2.tile.flags.main ? 1 : (Math.max(t1.width, t1.height) - Math.max(t2.width, t2.height)),
+// 	(t1, t2) => t1.tile.flags.main ? -1 : t2.tile.flags.main ? 1 : (t1.width * t1.height - t2.width * t2.height),
+// 	(t1, t2) => t1.tile.flags.main ? -1 : t2.tile.flags.main ? 1 : (t1.width - t2.width),
+// 	(t1, t2) => t1.tile.flags.main ? -1 : t2.tile.flags.main ? 1 : (t1.height - t2.height),
+// 	this.rand, this.rand, this.rand, this.rand, this.rand, this.rand
+// ],
+
+// if(ordering == this.rand) trial.forEach(t => t.rand = t.tile.flags.main ? 1 : Math.random());
+
+
 //---
 
-var colors = ["#b71c1c", "#880e4f", "#4a148c", "#311b92", "#1a237e", "#006064", "#33691e", "#ff6f00", "#e65100"];
+var colors = ["#311b92", "#673ab7", "#1b5e20", "#c2185b", "#673ab7", "#673ab7", "#388e3c", "#9e9d24", "#e65100"];
 
 
-
-
-
-
-
-// var Var = {},
-// 		Context = Samsara.DOM.Context,
-// 		Surface = Samsara.DOM.Surface,
-// 		ContainerSurface = Samsara.DOM.ContainerSurface,
-// 		Transform = Samsara.Core.Transform,
-// 		Transitionable = Samsara.Core.Transitionable,
-// 		MouseInput = Samsara.Inputs.MouseInput,
-// 		TouchInput = Samsara.Inputs.TouchInput,
-// 		GenericInput = Samsara.Inputs.GenericInput,
-// 		Accumulator = Samsara.Streams.Accumulator,
-// 		Differential = Samsara.Streams.Differential;
-
-// GenericInput.register({
-// 	 mouse : MouseInput,
-// 	 touch : TouchInput,
-// });
-
-// var Page = {
-// 	init: function() {
-// 		Var.context = new Context();
-// 		Var.context.mount(document.body);
-		
-// 		Var.container = Var.context
-// 			.add({
-// 				// transform: Transform.scale([.5, .5, .5])
-// 				//proportions: [.5, .5],
-// 			});
-// 			// .add(new ContainerSurface({
-// 			// 	proportions: [.5, .5],
-// 			// 	properties: {background: 'red'}
-// 			// }));
-// 		Var.frame = Var.container.add({
-// 			margins: [Const.margin, 2 * Const.barHeight], 
-// 			origin: [1, .5], 
-// 			align: [1, .5],
-// 		});
-		
-// 		Var.static = {
-// 			type: 'static', 
-// 			panels: [], 
-// 			fit: Fit.area.bind(Fit),
-// 			setSize: panel => Fit.setPanelSize(panel, Const.umargin)
-// 		};
-// 		Var.over = {
-// 			type: 'over', 
-// 			panels: [], 
-// 			fit: Fit.center.bind(Fit),
-// 			setSize: panel => Fit.setPanelSize(panel, 0)
-// 		};
-// 		Var.links = {
-// 			type: 'links', 
-// 			panels: [], 
-// 			fit: Fit.horizontal.bind(Fit),
-// 			setSize: panel => Fit.setLinkSize(panel)
-// 		};
-
-// 		window.onresize = () => { 
-// 			Page.layout(Var.static);
-// 			Page.layout(Var.over);
-// 		}
-		
-// 		Var.theme = new Themes[0];
-		
 // 		Var.conn = new CtxConnection(window.location.href, 'andrei');
-		
 // 		this.fetchTopic('*View.1');
-// 	},
 	
 // 	fetchTopic: function(phrase) {
 // 		Var.conn.sub().get(phrase, text => {
@@ -352,9 +351,4 @@ var colors = ["#b71c1c", "#880e4f", "#4a148c", "#311b92", "#1a237e", "#006064", 
 		
 // 		lo();
 // 	},
-	
-// 	backdrop: function(toggle) {
-// 		Var.static.panels.forEach(p => Var.theme.backdrop(p, toggle));
-// 	}
-// }
 

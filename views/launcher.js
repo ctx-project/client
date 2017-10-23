@@ -7,8 +7,9 @@ export default View.extend({
 	initialize: function() {
 		this.add(new Surface({
 			properties: {
-				background: 'url("_/bg.jpg")',
-				'background-size': 'cover'
+				// background: 'url("_/bg.jpg")',
+				// 'background-size': 'cover'
+				background: '#CFD8DC'
 			}
 		}));
 		
@@ -17,10 +18,10 @@ export default View.extend({
 			align: [.5, .05]
 		}).add(autocomplete);
 		
-		var topics = new Topics({size: [600, 100]});
-		this.add({
-			align: [.5, .15]
-		}).add(topics);
+		// var topics = new Topics({size: [600, 100]});
+		// this.add({
+		// 	align: [.5, .15]
+		// }).add(topics);
 
 	}
 });

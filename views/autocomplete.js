@@ -14,7 +14,10 @@ export default View.extend({
 	initialize: function(opts) {
 		this.add(new Surface({
 			tagName: 'input',
-			classes: opts.inputClasses
+			classes: opts.inputClasses,
+			attributes: {
+				placeholder: 'Search topic ...'
+			}
 		}));		
 	}
 });
