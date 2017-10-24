@@ -16,6 +16,8 @@ export default View.extend({
 		margin: 12,
 		minimized: false,
 		minimizedOpacity: .3,
+		decrement: 50,
+		minSize: [100, 100]
 	},
 	
 	initialize: function(options) {
@@ -33,6 +35,8 @@ export default View.extend({
 			// properties: {background: 'red'}
 		});
 
+		var randO = t => Math.random();
+
 		this.layout = new FluidLayout({
 			properties: {zIndex: 1},
 			layers: [{
@@ -41,10 +45,17 @@ export default View.extend({
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 0, //dragZ: 1,
 					packer: (items, size) => Pack.pressureArea(items, size, 
-						() => [350, 450],
-						[t => Math.random()],
-						t => 1,
-						t => false
+						sizer.bind(this),
+						[
+							t => 1 / Math.max(t.width, t.height),
+							t => 1 / (t.width * t.height),
+							t => 1 / t.width,
+							t => 1 / t.height,
+							randO, randO, randO, randO, randO, randO
+						],
+						trialRank,
+						trialResize.bind(this),
+						[options.margin, options.margin]
 					),
 					handler: () => this.defocus().deover(),
 					gestures: {
@@ -224,6 +235,78 @@ export default View.extend({
 	},
 });
 
+function trialRank(trial) {
+	 //?many importants, info
+	 var imp = null,//trial.find(t => t.tile.flags.important),
+			 supp = null;//trial.find(t => t.tile.flags.support);
+			
+	 return	 getAreaRank(trial) * .6 + 
+					 getRightRank(imp) * .15 + getTopRank(imp) * .05 + 
+					 getRightRank(supp) * .15 + getBottomRank(supp) * .05;
+}
+function getAreaRank(trial) {
+	return trial.length ? trial.map(t => t.width * t.height).reduce((a,b) => a + b) / trial.map(t => t.size[0] * t.size[1]).reduce((a,b) => a + b) : 1;
+}
+function getRightRank(imp) {
+	return 1;
+	return imp ? imp.fit.x / (trial.map(t => t.fit.x).reduce((a,b) => Math.max(a, b)) || 1) : 1;
+}
+function getTopRank(imp) {
+	return 1;
+	return imp ? 1 - imp.fit.y / (trial.map(t => t.fit.y).reduce((a,b) => Math.max(a, b)) || 1) : 1;
+}
+function getBottomRank(imp) {
+	return 1;
+	return imp ? imp.fit.y / (trial.map(t => t.fit.y).reduce((a,b) => Math.max(a, b)) || 1) : 1;
+}
+
+function sizer(item) {
+	return [400, 500].map(c => round(c, this.options.decrement));
+}
+
+function round(val, inc) {
+	return Math.round(val / inc) * inc;
+}
+
+function trialResize(trial) {
+	var rs = trial.map(itemResize.bind(this)).filter(r => r);
+	
+	if(!rs.length) return;
+	
+	var r = rs.reduce((a, b) => a.p < b.p ? a : b),
+			t = r.t;
+			
+	t.width = r.w;
+	t.height = r.h;
+	t.pressure = r.p;
+	
+	return t;
+}
+
+function itemResize(t) {
+	var dec = this.options.decrement,
+			min = this.options.minSize,
+			r = t.ratio,
+			w, h;
+	
+	if(t.width == min[0] && t.height == min[1]) return;
+			
+	if(r > 1) {
+		w = t.width - dec;
+		h = round(w / r, dec);
+	} else {
+		h = t.height - dec;
+		w = round(h * r, dec);
+	}
+	
+	w = Math.max(w, min[0]);
+	h = Math.max(h, min[1]);
+	
+	return {t, w, h, p: t.area / w / h};
+}
+
+
+
 //	 setPanelSize: function(panel, margin) {
 //		 panel.desired = panel.viewer.desired();
 //		 panel.width = Math.ceil(Math.max(panel.desired[0], panel.ctx.query.length / 5)) + Const.hmargins[panel.Viewer.type] + margin;
@@ -235,54 +318,6 @@ export default View.extend({
 //		 panel.height = 1 + Const.umargin;
 //	 },
 
-//	 area: function(tiles, width, height, minWidth, minHeight) {
-//		 return	 this.screenArea.apply(this, arguments) || 
-//						 this.pageArea.apply(this, arguments);
-//	 },
-
-
-// function getRank() {
-// 	//?many importants, info
-// 	var imp = trial.find(t => t.tile.flags.important),
-// 			supp = trial.find(t => t.tile.flags.support);
-			
-// 	return	 getAreaRank() * .6 + 
-// 					getRightRank(imp) * .15 + getTopRank(imp) * .05 + 
-// 					getRightRank(supp) * .15 + getBottomRank(supp) * .05;
-// }
-// function getAreaRank() {
-// 	return trial.length ? trial.map(t => t.width * t.height).reduce((a,b) => a + b) / trial.map(t => t.tile.width * t.tile.height).reduce((a,b) => a + b) : 1;
-// }
-// function getRightRank(imp) {
-// 	return imp ? imp.fit.x / (trial.map(t => t.fit.x).reduce((a,b) => Math.max(a, b)) || 1) : 1;
-// }
-// function getTopRank(imp) {
-// 	return imp ? 1 - imp.fit.y / (trial.map(t => t.fit.y).reduce((a,b) => Math.max(a, b)) || 1) : 1;
-// }
-// function getBottomRank(imp) {
-// 	return imp ? imp.fit.y / (trial.map(t => t.fit.y).reduce((a,b) => Math.max(a, b)) || 1) : 1;
-// }
-
-// function scale() {
-// 	var scaled = false;
-// 	trial.forEach(t => {
-// 		if(t.width > 4) {t.width = t.width - 1; scaled = true;}
-// 		if(t.height > 4) {t.height = t.height - 1; scaled = true;}
-// 	});
-// 	return scaled;
-// }
-
-// rand: (t1, t2) => t1.rand - t2.rand,
-
-// orders: [
-// 	(t1, t2) => t1.tile.flags.main ? -1 : t2.tile.flags.main ? 1 : (Math.max(t1.width, t1.height) - Math.max(t2.width, t2.height)),
-// 	(t1, t2) => t1.tile.flags.main ? -1 : t2.tile.flags.main ? 1 : (t1.width * t1.height - t2.width * t2.height),
-// 	(t1, t2) => t1.tile.flags.main ? -1 : t2.tile.flags.main ? 1 : (t1.width - t2.width),
-// 	(t1, t2) => t1.tile.flags.main ? -1 : t2.tile.flags.main ? 1 : (t1.height - t2.height),
-// 	this.rand, this.rand, this.rand, this.rand, this.rand, this.rand
-// ],
-
-// if(ordering == this.rand) trial.forEach(t => t.rand = t.tile.flags.main ? 1 : Math.random());
 
 
 //---
@@ -307,26 +342,6 @@ var colors = ["#311b92", "#673ab7", "#1b5e20", "#c2185b", "#673ab7", "#673ab7", 
 // 			ctx.panel.text = text;
 // 			Panel.add(ctx.panel, Var.static);
 // 		}
-// 	},
-	
-// 	unitSize: function(size) {
-// 		return size / 75;
-// 	},
-	
-// 	frameWidth: function() {
-// 		return window.innerWidth - Const.margin;
-// 	},
-	
-// 	frameHeight: function() {
-// 		return window.innerHeight - 2 * Const.barHeight;
-// 	},
-	
-// 	frameUnitWidth: function() {
-// 		return this.unitSize(this.frameWidth());
-// 	},
-	
-// 	frameUnitHeight: function() {
-// 		return this.unitSize(this.frameHeight());
 // 	},
 	
 // 	_layouts: new Map(),
