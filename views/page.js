@@ -1,5 +1,6 @@
 import FluidLayout from '../lib/FluidLayout.js'
 import * as Pack from '../lib/pack.js'
+import {random} from '../lib/helper.js'
 
 
 var View = Samsara.Core.View,
@@ -35,28 +36,29 @@ export default View.extend({
 			// properties: {background: 'red'}
 		});
 
-		var randO = t => Math.random();
+		var randO = t => Math.random(),
+				mainPacker = (items, size) => Pack.pressureArea(items, size, 
+				 sizer.bind(this),
+				 [
+					 t => 1 / Math.max(t.width, t.height),
+					 t => 1 / (t.width * t.height),
+					 t => 1 / t.width,
+					 t => 1 / t.height,
+					 randO, randO, randO, randO, randO, randO
+				 ],
+				 trialRank,
+				 trialResize.bind(this),
+				 [options.margin, options.margin]
+			 );
 
 		this.layout = new FluidLayout({
 			properties: {zIndex: 1},
 			layers: [{
 					name: 'main',
-					items: Array(8).fill().map((_, i) => new Surface({classes: ['panel'], properties: {background: colors[i % colors.length]}, content: i})),
+					items: getItems(),
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					baseZ: 0, //dragZ: 1,
-					packer: (items, size) => Pack.pressureArea(items, size, 
-						sizer.bind(this),
-						[
-							t => 1 / Math.max(t.width, t.height),
-							t => 1 / (t.width * t.height),
-							t => 1 / t.width,
-							t => 1 / t.height,
-							randO, randO, randO, randO, randO, randO
-						],
-						trialRank,
-						trialResize.bind(this),
-						[options.margin, options.margin]
-					),
+					packer: mainPacker,
 					handler: () => this.defocus().deover(),
 					gestures: {
 						'tap': this.focus.bind(this),
@@ -70,6 +72,16 @@ export default View.extend({
 						// 'left.drag': this.embed.bind(this),
 						'default': item => this.layout.returnItem(item)
 					}
+				}, {
+					name: 'mainPrev',
+					corners: [-2, options.barHeight, 0, -options.barHeight],
+					baseZ: 0, //dragZ: 1,
+					packer: mainPacker,
+				}, {
+					name: 'mainNext',
+					corners: [1, options.barHeight, 2, -options.barHeight],
+					baseZ: 0, //dragZ: 1,
+					packer: mainPacker,
 				}, {
 					name: 'focus',
 					corners: [0, options.barHeight, 1, -options.barHeight],
@@ -101,17 +113,28 @@ export default View.extend({
 						'tap': this.include.bind(this),
 						'top': this.maximize.bind(this),
 						'bottom': this.reminimize.bind(this),
+						'left.throw': this.navigate.bind(this),
 					}
 				}, {
 					name: 'maxi',
 					corners: [0, 0, 1, 1],
 					baseZ: 8, //dragZ: 9,
-					packer: (items, size) => Pack.fill(items, size),
+					packer: Pack.fill,
 					gestures: {
-						'parent': 'focus',
-						'tap': () => {},
 						'bottom.throw': this.normalize.bind(this),
+						'right.throw': this.goPrevSiebling.bind(this),
+						'left.throw': this.goNextSiebling.bind(this),
 					}
+				}, {
+					name: 'maxiPrev',
+					corners: [-2, 0, 0, 1],
+					baseZ: 8, //dragZ: 1,
+					packer: Pack.fill,
+				}, {
+					name: 'maxiNext',
+					corners: [1, 0, 2, 1],
+					baseZ: 8, //dragZ: 1,
+					packer: Pack.fill,
 				},
 			]
 		});
@@ -175,8 +198,7 @@ export default View.extend({
 	
 	defocus: function() {
 		if(this.hasItems('focus'))
-			this.layout.backLayer('focus').setLayerOpacity('main', 1).retransformLayer('main');
-		
+			this.layout.forEachItem('focus', 'back').setLayerOpacity('main', 1).retransformLayer('main');
 		return this;
 	},
 	
@@ -185,7 +207,7 @@ export default View.extend({
 	},
 	
 	reminimize: function(panel) {
-		this.layout.backItem(panel).returnItem(panel);
+		this.layout.backReturnItem(panel);
 	},
 	
 	over: function(panel) {
@@ -194,7 +216,7 @@ export default View.extend({
 	
 	deover: function() {
 		if(this.hasItems('over'))
-			this.layout.backLayer('over').layoutLayer('leads');
+			this.layout.forEachItem('over', 'back').layoutLayer('leads');
 	},
 	
 	include: function(panel) {
@@ -207,11 +229,36 @@ export default View.extend({
 	},
 	
 	normalize: function(panel) {
-		this.layout.backItem(panel).returnItem(panel);
+		this.layout.backReturnItem(panel);
+		return this;
+	},
+	
+	goNextSiebling: function(panel) {
+		this.swipeItems([this.getSiebling(panel, +1)], 'maxi', 'maxiNext', 'maxiPrev', 'reproject');
 	},
 		
+	goPrevSiebling: function(panel) {
+		this.swipeItems([this.getSiebling(panel, -1)], 'maxi', 'maxiPrev', 'maxiNext', 'reproject');
+	},
+		
+	getSiebling: function(panel, delta) {
+		var layer = this.layout.getItemBacks(panel).reduce((a, b) => b.items.length > 1 ? b : a),
+				items = layer.items,
+				ix = (items.indexOf(panel) + delta + items.length) % items.length,
+				sieb = items[ix];
+		return sieb == panel ? null : sieb;
+	},
+	
+	swipeItems: function(items, target, enter, exit, method) {
+		if(!items[0]) return;
+		this.layout
+			.forEachItem(target, method, exit).layoutLayer(exit).onTransitionEnd(() => this.layout.forEachItem(exit, {switch: 'remove', reproject: 'backReturn'}[method]))
+			.forEachItem(items, {switch: 'add', reproject: 'project'}[method], enter).quickLayoutLayer(enter).forEachItem(enter, method, target).layoutLayer(target);
+	},
+
 	navigate: function(panel) {
-		l('navigate');
+		this.defocus().deover();
+		this.swipeItems(getItems(), 'main', 'mainNext', 'mainPrev', 'switch');
 	},
 	
 	prioritize: function(panel) {
@@ -323,7 +370,9 @@ function itemResize(t) {
 //---
 
 var colors = ["#311b92", "#673ab7", "#1b5e20", "#c2185b", "#673ab7", "#673ab7", "#388e3c", "#9e9d24", "#e65100"];
-
+function getItems() {
+	return Array(1 + random(10)).fill().map((_, i) => new Surface({classes: ['panel'], properties: {background: colors[i % colors.length]}, content: i}))
+}
 
 // 		Var.conn = new CtxConnection(window.location.href, 'andrei');
 // 		this.fetchTopic('*View.1');
