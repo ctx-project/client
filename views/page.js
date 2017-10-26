@@ -1,4 +1,5 @@
 import FluidLayout from '../lib/FluidLayout.js'
+import Autocomplete from './autocomplete.js'
 import * as Pack from '../lib/pack.js'
 import {random} from '../lib/helper.js'
 
@@ -12,13 +13,14 @@ var View = Samsara.Core.View,
 
 export default View.extend({
 	defaults: {
-		transition: {curve: 'easeInCubic', duration: 170 },
+		transition: {curve: 'easeInCubic', duration: 270 },
 		barHeight: 50,
-		margin: 12,
+		margin: 8,
 		minimized: false,
 		minimizedOpacity: .3,
 		decrement: 50,
-		minSize: [100, 100]
+		minSize: [100, 100],
+		leadSize: [300, 300]
 	},
 	
 	initialize: function(options) {
@@ -48,15 +50,16 @@ export default View.extend({
 				 ],
 				 trialRank,
 				 trialResize.bind(this),
-				 [options.margin, options.margin]
+				 [options.margin / 2, options.margin / 2] //? fix: i get double the margin; dunno why
 			 );
 
 		this.layout = new FluidLayout({
 			properties: {zIndex: 1},
 			layers: [{
 					name: 'main',
-					items: getItems(),
+					items: getItems(10),
 					corners: [0, options.barHeight, 1, -options.barHeight],
+					margins: [options.margin, options.margin, 0, 0],
 					baseZ: 0, //dragZ: 1,
 					packer: mainPacker,
 					handler: () => this.defocus().deover(),
@@ -75,11 +78,13 @@ export default View.extend({
 				}, {
 					name: 'mainPrev',
 					corners: [-2, options.barHeight, 0, -options.barHeight],
+					margins: [options.margin, options.margin, 0, 0],
 					baseZ: 0, //dragZ: 1,
 					packer: mainPacker,
 				}, {
 					name: 'mainNext',
 					corners: [1, options.barHeight, 2, -options.barHeight],
+					margins: [options.margin, options.margin, 0, 0],
 					baseZ: 0, //dragZ: 1,
 					packer: mainPacker,
 				}, {
@@ -89,15 +94,25 @@ export default View.extend({
 					transform: {scale: [1.015, 1.015, 1]},
 					handler: this.deover.bind(this),
 					gestures: {
-						'parent': 'main',
+						'inherit': 'main',
 						'tap': item => this.defocus()//.focus(item),
 					}
 				}, {
 					name: 'leads',
-					corners: [options.margin, -options.barHeight, 1, 1],
-					baseZ: 6, //dragZ: 7,
+					items: getItems(3),
+					corners: [0, -options.barHeight, 1, 1],
+					margins: [options.margin, 0, 0, 0],
+					baseZ: 4, //dragZ: 7,
 					birth: [1, .5],
-					packer: (items, size) => Pack.horizontalLine(items, size, () => [200, 50], options.margin),
+					surface: {
+						classes: ['layer'], 
+						opacity: 0, 
+						gestures: {
+							'default': this.toggleLeads.bind(this)
+						},
+						properties: {zIndex: 3}
+					},
+					packer: (items, size) => Pack.horizontalLine(items, size, this.getLeadSize.bind(this), options.margin),
 					handler: this.deover.bind(this),
 					gestures: {
 						'tap': this.over.bind(this),
@@ -107,8 +122,9 @@ export default View.extend({
 				}, {
 					name: 'over',
 					corners: [0, options.barHeight, 1, -options.barHeight],
-					baseZ: 4, //dragZ: 5,
-					packer: (items, size) => Pack.contain(items, size, () => [300, 300], [2 * options.margin, 2 * options.margin]),
+					margins: [options.margin, options.margin, options.margin, options.margin],
+					baseZ: 6, //dragZ: 5,
+					packer: (items, size) => Pack.contain(items, size, () => [300, 300]),
 					gestures: {
 						'tap': this.include.bind(this),
 						'top': this.maximize.bind(this),
@@ -146,6 +162,19 @@ export default View.extend({
 		this.container.add(this.menu);
 		this.container.add(this.layout);
 		this.container.add(this.overlay);
+		
+		this.leadsHeight = options.leadSize[1] + options.barHeight + 5 * options.margin;
+		this.autocompleteToggle$ = new Transitionable(0);
+
+		this.container.add({
+			align: [.5, 1],
+			transform: this.autocompleteToggle$.map(t => Transform.compose(
+				Transform.translateY(-t * (this.leadsHeight - 2 * options.margin)),
+				Transform.scaleY(t)
+			)),
+			opacity: this.autocompleteToggle$
+		}).add(new Autocomplete({size: [550, options.barHeight], setup: {zIndex: 4, placeholder: 'Search in Travel ...'}}));
+
 		
 		this.translate$ = new Transitionable(0);
 		this.opacity$ = new Transitionable(1);
@@ -258,7 +287,26 @@ export default View.extend({
 
 	navigate: function(panel) {
 		this.defocus().deover();
-		this.swipeItems(getItems(), 'main', 'mainNext', 'mainPrev', 'switch');
+		this.swipeItems(getItems(10), 'main', 'mainNext', 'mainPrev', 'switch');
+	},
+	
+	getLeadSize: function(panel) {
+		return this.isLeadsOpen ? this.options.leadSize : [200, 40];	
+	},
+	isLeadsOpen: false,
+	toggleLeads: function(layer) {
+		var options = this.options;
+		this.isLeadsOpen = !this.isLeadsOpen;
+		this.layout
+			.refreshLayer('leads', 
+				this.isLeadsOpen ? [0, -this.leadsHeight, 1, 1] : [0, -options.barHeight, 1, 1], 
+				this.isLeadsOpen ? [options.margin, options.barHeight + 4 * options.margin, 0, options.margin] : [options.margin, 0, 0, 0]
+			)
+			.setSurfaceOpacity('leads', this.isLeadsOpen ? .95 : 0)
+			.refreshLayer('over', 
+				this.isLeadsOpen ? [0, options.barHeight, 1, -this.leadsHeight] : [0, options.barHeight, 1, -options.barHeight], 
+			);
+		this.autocompleteToggle$.set(this.isLeadsOpen ? 1 : 0, this.layout.options.transition);	
 	},
 	
 	prioritize: function(panel) {
@@ -370,8 +418,8 @@ function itemResize(t) {
 //---
 
 var colors = ["#311b92", "#673ab7", "#1b5e20", "#c2185b", "#673ab7", "#673ab7", "#388e3c", "#9e9d24", "#e65100"];
-function getItems() {
-	return Array(1 + random(10)).fill().map((_, i) => new Surface({classes: ['panel'], properties: {background: colors[i % colors.length]}, content: i}))
+function getItems(count) {
+	return Array(1 + random(count - 1)).fill().map((_, i) => new Surface({classes: ['panel'], properties: {background: colors[i % colors.length]}, content: i}))
 }
 
 // 		Var.conn = new CtxConnection(window.location.href, 'andrei');
