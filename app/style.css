@@ -3,17 +3,32 @@ body{
 	padding: 0;
 	margin: 0;
 }
-.input-bar {
-	background: white;
-	border: none;
-	border-radius: 25px;
-	outline: none;
-	font-size: 18px;
-	height: 50px;
-	padding: 0 25px;
-}
 .shadow {
 	box-shadow: 0 15px 60px 0 rgba(42,44,58,.15), 7px 15px 22px 0 rgba(129,165,238,.1);
+}
+.autocomplete {
+	border-radius: 25px;
+	transition: border-radius 270ms;
+}
+.autocomplete.open {
+	border-radius: 4px;
+}
+.autocomplete > input {
+	background: white;
+	border: none;
+	outline: none;
+	font-size: 18px;
+	padding: 0 25px;
+}
+.autocomplete > .content {
+	border-top: solid 1px #ddd;
+	background: white;
+}
+.autocomplete .item {
+	padding: 16px 25px;
+}
+.autocomplete .item.selected {
+	background: #ddd;
 }
 .panel {
 	/*box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),*/

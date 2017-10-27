@@ -165,6 +165,7 @@ export default View.extend({
 		
 		this.leadsHeight = options.leadSize[1] + options.barHeight + 5 * options.margin;
 		this.autocompleteToggle$ = new Transitionable(0);
+		var autocomplete = new Autocomplete({width: 550, inputHeight: options.barHeight, contentHeight: options.leadSize[1], zIndex: 4, placeholder: 'Search in Travel ...'});
 
 		this.container.add({
 			align: [.5, 1],
@@ -173,7 +174,15 @@ export default View.extend({
 				Transform.scaleY(t)
 			)),
 			opacity: this.autocompleteToggle$
-		}).add(new Autocomplete({size: [550, options.barHeight], setup: {zIndex: 4, placeholder: 'Search in Travel ...'}}));
+		}).add(autocomplete);
+		
+		autocomplete.on('start', () => this.layout.forEachItem('leads', 'remove'));
+		autocomplete.on('end', v => { 
+			this.layout.forEachItem('leads', 'remove')
+			this.layout.forEachItem(getItems(4), 'add', 'leads');
+			this.layout.layoutLayer('leads');
+		});
+		autocomplete.on('update', search => autocomplete.setResults(Array(5).fill().map(() => search)));
 
 		
 		this.translate$ = new Transitionable(0);
