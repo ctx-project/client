@@ -6,28 +6,31 @@ body{
 .shadow {
 	box-shadow: 0 15px 60px 0 rgba(42,44,58,.15), 7px 15px 22px 0 rgba(129,165,238,.1);
 }
-.autocomplete {
+.autosuggest {
 	border-radius: 25px;
 	transition: border-radius 270ms;
 }
-.autocomplete.open {
+.autosuggest.open {
 	border-radius: 4px;
 }
-.autocomplete > input {
+.autosuggest > input {
 	background: white;
 	border: none;
 	outline: none;
 	font-size: 18px;
 	padding: 0 25px;
 }
-.autocomplete > .content {
+.autosuggest > .content {
 	border-top: solid 1px #ddd;
 	background: white;
 }
-.autocomplete .item {
+.autosuggest .item {
 	padding: 16px 25px;
 }
-.autocomplete .item.selected {
+.autosuggest .item > span {
+	opacity: .6;
+}
+.autosuggest .item.selected {
 	background: #ddd;
 }
 .panel {

@@ -1,5 +1,5 @@
 import FluidLayout from '../lib/FluidLayout.js'
-import Autocomplete from './autocomplete.js'
+import Autosuggest from '../lib/Autosuggest.js'
 import * as Pack from '../lib/pack.js'
 import {random} from '../lib/helper.js'
 
@@ -164,25 +164,26 @@ export default View.extend({
 		this.container.add(this.overlay);
 		
 		this.leadsHeight = options.leadSize[1] + options.barHeight + 5 * options.margin;
-		this.autocompleteToggle$ = new Transitionable(0);
-		var autocomplete = new Autocomplete({width: 550, inputHeight: options.barHeight, contentHeight: options.leadSize[1], zIndex: 4, placeholder: 'Search in Travel ...'});
+		this.autosuggestToggle$ = new Transitionable(0);
+		var autosuggest = new Autosuggest({width: 550, inputHeight: options.barHeight, contentHeight: options.leadSize[1], zIndex: 4, placeholder: 'Search in Travel ...'});
 
 		this.container.add({
 			align: [.5, 1],
-			transform: this.autocompleteToggle$.map(t => Transform.compose(
+			transform: this.autosuggestToggle$.map(t => Transform.compose(
 				Transform.translateY(-t * (this.leadsHeight - 2 * options.margin)),
 				Transform.scaleY(t)
 			)),
-			opacity: this.autocompleteToggle$
-		}).add(autocomplete);
+			opacity: this.autosuggestToggle$
+		}).add(autosuggest);
 		
-		autocomplete.on('start', () => this.layout.forEachItem('leads', 'remove'));
-		autocomplete.on('end', v => { 
-			this.layout.forEachItem('leads', 'remove')
-			this.layout.forEachItem(getItems(4), 'add', 'leads');
-			this.layout.layoutLayer('leads');
+		autosuggest.on('start', () => this.layout.forEachItem('leads', 'remove'));
+		autosuggest.on('end', v => { 
+			this.layout
+				.forEachItem('leads', 'remove')
+				.forEachItem(getItems(4), 'add', 'leads')
+				.layoutLayer('leads');
 		});
-		autocomplete.on('update', search => autocomplete.setResults(Array(5).fill().map(() => search)));
+		autosuggest.on('update', search => autosuggest.setResults(Array(5).fill().map(() => `${search} ${Math.random()}`)));
 
 		
 		this.translate$ = new Transitionable(0);
@@ -315,7 +316,7 @@ export default View.extend({
 			.refreshLayer('over', 
 				this.isLeadsOpen ? [0, options.barHeight, 1, -this.leadsHeight] : [0, options.barHeight, 1, -options.barHeight], 
 			);
-		this.autocompleteToggle$.set(this.isLeadsOpen ? 1 : 0, this.layout.options.transition);	
+		this.autosuggestToggle$.set(this.isLeadsOpen ? 1 : 0, this.layout.options.transition);	
 	},
 	
 	prioritize: function(panel) {

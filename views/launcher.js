@@ -1,5 +1,3 @@
-import Autocomplete from './autocomplete.js'
-import Topics from './topics.js'
 var View = Samsara.Core.View,
 		Surface = Samsara.DOM.Surface;
 
@@ -13,19 +11,13 @@ export default View.extend({
 			}
 		}));
 		
-		var autocomplete = new Autocomplete({width: 600, inputHeight: 50, contentHeight: 400});
-		this.add({
-			align: [.5, .05]
-		}).add(autocomplete);
-		
-		autocomplete.on('start', () => l('start'));
-		autocomplete.on('end', v => l('end ' + v));
-		autocomplete.on('update', search => autocomplete.setResults(Array(6).fill().map(() => search)));
-		
-		// var topics = new Topics({size: [600, 100]});
+		// var autocomplete = new Autocomplete({width: 600, inputHeight: 50, contentHeight: 400});
 		// this.add({
-		// 	align: [.5, .15]
-		// }).add(topics);
-
+		// 	align: [.5, .05]
+		// }).add(autocomplete);
+		// autocomplete.on('start', () => l('start'));
+		// autocomplete.on('end', v => l('end ' + v));
+		// autocomplete.on('update', search => autocomplete.setResults(Array(6).fill().map(() => search)));
+		
 	}
 });
