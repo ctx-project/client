@@ -165,7 +165,7 @@ export default View.extend({
 		
 		this.leadsHeight = options.leadSize[1] + options.barHeight + 5 * options.margin;
 		this.autosuggestToggle$ = new Transitionable(0);
-		var autosuggest = new Autosuggest({width: 550, inputHeight: options.barHeight, contentHeight: options.leadSize[1], zIndex: 4, placeholder: 'Search in Travel ...'});
+		this.autosuggest = new Autosuggest({width: 550, inputHeight: options.barHeight, contentHeight: options.leadSize[1], zIndex: 4, placeholder: 'Search in Travel ...'});
 
 		this.container.add({
 			align: [.5, 1],
@@ -174,16 +174,16 @@ export default View.extend({
 				Transform.scaleY(t)
 			)),
 			opacity: this.autosuggestToggle$
-		}).add(autosuggest);
+		}).add(this.autosuggest);
 		
-		autosuggest.on('start', () => this.layout.forEachItem('leads', 'remove'));
-		autosuggest.on('end', v => { 
+		this.autosuggest.on('start', () => this.layout.forEachItem('leads', 'remove'));
+		this.autosuggest.on('end', v => { 
 			this.layout
 				.forEachItem('leads', 'remove')
 				.forEachItem(getItems(4), 'add', 'leads')
 				.layoutLayer('leads');
 		});
-		autosuggest.on('update', search => autosuggest.setResults(Array(5).fill().map(() => `${search} ${Math.random()}`)));
+		// this.autosuggest.on('update', search => this.autosuggest.setResults(Array(5).fill().map(() => `${search} ${Math.random()}`)));
 
 		
 		this.translate$ = new Transitionable(0);

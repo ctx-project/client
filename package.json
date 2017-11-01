@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/ctx-project/client#readme",
   "dependencies": {
-    "samsarajs": "^0.2.4"
+    "@cycle/run": "^3.4.0",
+    "samsarajs": "^0.2.4",
+    "xstream": "^11.0.0"
   }
 }

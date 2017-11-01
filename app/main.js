@@ -1,14 +1,26 @@
-import Launcher from '../views/launcher.js'
-import Page from '../views/page.js'
+import makeCompositor from '../app/compositor.js'
+import makeConnection from '../app/connection.js'
 
-var Context = Samsara.DOM.Context;
+var xs = xstream.default,
+		run = Cycle.default;
 
-var context = new Context(),
-		launcher = new Launcher(),
-		page = new Page();
+run(main, {
+	compositor: makeCompositor(document.body),
+	connection: makeConnection(),
+})
 
-context.add(launcher);
-context.add(page);
+function main({compositor, connection}) {
+	var comp$ = connection.map(resp => ({type: 'hints', hints: resp.response.split('\n')})).startWith({type: 'init'}),
+			conn$ = compositor.map(query => ({type: 'hints', query})).startWith({type: 'init', base: window.location.href, user: 'andrei'});
+	
+	// connection.addListener({next: console.log});
+	// compositor.addListener({next: console.log});
+	
+	return {
+		compositor: comp$,
+		connection: conn$,
+	}
+}
 
-context.setPerspective(1.2 * Math.sqrt(screen.height ** 2 + screen.width ** 2));
-context.mount(document.body);
+
+
