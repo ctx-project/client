@@ -57,7 +57,6 @@ export default View.extend({
 			properties: {zIndex: 1},
 			layers: [{
 					name: 'main',
-					items: getItems(10),
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					margins: [options.margin, options.margin, 0, 0],
 					baseZ: 0, //dragZ: 1,
@@ -65,7 +64,7 @@ export default View.extend({
 					handler: () => this.defocus().deover(),
 					gestures: {
 						'tap': this.focus.bind(this),
-						'bottom.throw': this.minimize.bind(this),
+						'bottom.throw': this.exclude.bind(this),
 						// 'bottom.drag': this.revealTop.bind(this),
 						'top.throw': this.maximize.bind(this),
 						// 'top.drag': this.prioritize.bind(this),
@@ -99,7 +98,6 @@ export default View.extend({
 					}
 				}, {
 					name: 'leads',
-					items: getItems(3),
 					corners: [0, -options.barHeight, 1, 1],
 					margins: [options.margin, 0, 0, 0],
 					baseZ: 4, //dragZ: 7,
@@ -128,7 +126,7 @@ export default View.extend({
 					gestures: {
 						'tap': this.include.bind(this),
 						'top': this.maximize.bind(this),
-						'bottom': this.reminimize.bind(this),
+						'bottom': this.deover.bind(this),
 						'left.throw': this.navigate.bind(this),
 					}
 				}, {
@@ -241,13 +239,18 @@ export default View.extend({
 		return this;
 	},
 	
-	minimize: function(panel) {
+	include: function(panel) {
+		this.defocus();
+		this.layout.switchItem(panel, 'main').layoutLayer('leads').layoutLayer('main');
+	},
+	
+	exclude: function(panel) {
 		this.layout.switchItem(panel, 'leads').layoutLayer('leads').layoutLayer('main');
 	},
 	
-	reminimize: function(panel) {
-		this.layout.backReturnItem(panel);
-	},
+	// reminimize: function(panel) {
+	//	 this.layout.backReturnItem(panel);
+	// },
 	
 	over: function(panel) {
 		this.layout.projectItem(panel, 'over').layoutLayer('over');
@@ -256,11 +259,6 @@ export default View.extend({
 	deover: function() {
 		if(this.hasItems('over'))
 			this.layout.forEachItem('over', 'back').layoutLayer('leads');
-	},
-	
-	include: function(panel) {
-		this.defocus();
-		this.layout.switchItem(panel, 'main').layoutLayer('leads').layoutLayer('main');
 	},
 	
 	maximize: function(panel) {
@@ -289,7 +287,7 @@ export default View.extend({
 	},
 	
 	swipeItems: function(items, target, enter, exit, method) {
-		if(!items[0]) return;
+		if(!items || !items[0]) return;
 		this.layout
 			.forEachItem(target, method, exit).layoutLayer(exit).onTransitionEnd(() => this.layout.forEachItem(exit, {switch: 'remove', reproject: 'backReturn'}[method]))
 			.forEachItem(items, {switch: 'add', reproject: 'project'}[method], enter).quickLayoutLayer(enter).forEachItem(enter, method, target).layoutLayer(target);
