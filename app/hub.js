@@ -16,7 +16,6 @@ var emitter, conn, ctxs,
 		
 		rules = {
 			init({base, user}) {
-				l('init');
 				conn = new CtxConnection(base, user);
 				ctxs = {};
 			},
@@ -27,7 +26,7 @@ var emitter, conn, ctxs,
 			},
 			
 			sub({id, parentId, query}) {
-				rules.drop(id);
+				rules.drop({id});
 				ctxs[id] = (parentId ? ctxs[parentId] : conn).sub(query);
 			},
 			
