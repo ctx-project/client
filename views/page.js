@@ -293,6 +293,11 @@ export default View.extend({
 			.forEachItem(items, {switch: 'add', reproject: 'project'}[method], enter).quickLayoutLayer(enter).forEachItem(enter, method, target).layoutLayer(target);
 	},
 
+	swipeMain: function(items) {
+		this.defocus().deover();
+		this.swipeItems(items, 'main', 'mainNext', 'mainPrev', 'switch');
+	},
+	
 	navigate: function(panel) {
 		this.defocus().deover();
 		this.swipeItems(getItems(10), 'main', 'mainNext', 'mainPrev', 'switch');
@@ -408,67 +413,9 @@ function itemResize(t) {
 	return {t, w, h, p: t.area / w / h};
 }
 
-
-
-//	 setPanelSize: function(panel, margin) {
-//		 panel.desired = panel.viewer.desired();
-//		 panel.width = Math.ceil(Math.max(panel.desired[0], panel.ctx.query.length / 5)) + Const.hmargins[panel.Viewer.type] + margin;
-//		 panel.height = Math.ceil(panel.desired[1]) + Const.vmargins[panel.Viewer.type] + margin;
-//	 },
-	
-//	 setLinkSize: function(panel) {
-//		 panel.width = Math.ceil(panel.ctx.query.length / 5) + Const.umargin;
-//		 panel.height = 1 + Const.umargin;
-//	 },
-
-
-
 //---
 
 var colors = ["#311b92", "#673ab7", "#1b5e20", "#c2185b", "#673ab7", "#673ab7", "#388e3c", "#9e9d24", "#e65100"];
 function getItems(count) {
 	return Array(1 + random(count - 1)).fill().map((_, i) => new Surface({classes: ['panel'], properties: {background: colors[i % colors.length]}, content: i}))
 }
-
-// 		Var.conn = new CtxConnection(window.location.href, 'andrei');
-// 		this.fetchTopic('*View.1');
-	
-// 	fetchTopic: function(phrase) {
-// 		Var.conn.sub().get(phrase, text => {
-// 			text.split('\n')
-// 					.map(Panel.create)
-// 					.sort((a, b) => a.id - b.id)
-// 					.forEach((p, i, panels) => {
-// 						Panel.prepare(p, panels).ctx.get('', addPanel);
-// 					});
-// 		});
-		
-// 		function addPanel(text, ctx) {
-// 			ctx.panel.text = text;
-// 			Panel.add(ctx.panel, Var.static);
-// 		}
-// 	},
-	
-// 	_layouts: new Map(),
-// 	layout: function(layer) {
-// 		var lo = this._layouts.get(layer);
-// 		if(!lo) {
-// 			lo = Helper.debounce(function() {
-// 				var width = this.frameUnitWidth(),
-// 						height = this.frameUnitHeight(),
-// 						fit = layer.fit(layer.panels, width, height, 2, 2);
-		
-// 				if(!fit) return;
-		
-// 				fit.forEach(t => Panel.move(t.tile, {
-// 					proportions: [t.width / width, t.height / height], 
-// 					align: [t.fit.x / width, t.fit.y / height]
-// 					}));
-// 			}.bind(this), 100);
-
-// 			this._layouts.set(layer, lo);
-// 		}
-		
-// 		lo();
-// 	},
-

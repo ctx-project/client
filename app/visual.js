@@ -33,8 +33,22 @@ var context, launcher, page, emitter,
 			
 			hints({hints}) {
 				page.autosuggest.setResults(hints);
+			},
+			
+			views({views}) {
+				page.swipeMain(Object.values(views).map(v => new Samsara.DOM.Surface({
+					classes: ['panel'], 
+					properties: {background: '#311b92'},
+					content: v.query
+				})));
 			}
 		};
+		
+		// var updateViewsD = debounce(update);
+		
+		// function updateViews(views) {
+			
+		// }
 		
 		return driver;
 }

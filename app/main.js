@@ -5,10 +5,6 @@ import * as $ from '../lib/bu$.js'
 var xs = xstream.default,
 		run = Cycle.default;
 
-
-l(JSON.stringify(CtxParse.text('!! Ctx.aa:12.22 *main dwew ~123\nvarza Bai:nene', 
-	['tags', 'signature', 'meta', 'head', 'split', 'query']), null, 2));
-
 setTimeout(() => run(main, {
 	visual: makeVisual(document.body),
 	hub: makeHub(),
@@ -39,15 +35,21 @@ var rules = {
 	hub_hints: (s, p) => [{$name: 'visual_hints', hints: p.hints.split('\n')}],
 	
 	router_route(s, p) { 
-		//? clear state.views
+		s.topic = p.route;
+		s.config = null;
+		s.views = {};
+		s.leads = {};
+		
 		return [
 			{$name: 'hub_sub', id: 'topic', query: p.route},
 			{$name: 'hub_get', id: 'topic', $recover: 'views'}
 		];
 	},
 	hub_views(s, p) {
-		//? parse, update/delete from state
-		l(p.text);
-		return [];
+		CtxParse.text(p.text, ['tags', 'meta', 'query']).forEach(i => {
+			s.views[i.id] = i.removed ? undefined : i;
+		});
+		
+		return [{$name: 'visual_views', views: s.views}];
 	}
 };
