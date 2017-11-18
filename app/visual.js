@@ -1,5 +1,6 @@
 import Launcher from '../views/launcher.js'
 import Page from '../views/page.js'
+import Panel from '../views/panel.js'
 
 var Context = Samsara.DOM.Context,
 		xs = xstream.default;
@@ -36,11 +37,7 @@ var context, launcher, page, emitter,
 			},
 			
 			views({views}) {
-				page.swipeMain(Object.values(views).map(v => new Samsara.DOM.Surface({
-					classes: ['panel'], 
-					properties: {background: '#311b92'},
-					content: v.query
-				})));
+				page.swipeMain(Object.values(views).map(v => new Panel({record: v})));
 			}
 		};
 		
