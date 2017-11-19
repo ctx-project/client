@@ -51,5 +51,17 @@ var rules = {
 		});
 		
 		return [{$name: 'visual_views', views: s.views}];
-	}
+	},
+	
+	visual_sub: (s, p) => forward(p, 'hub'),
+
+	visual_get: (s, p) => forward(p, 'hub', 'items'),
+	hub_items: (s, p) => forward(p, 'visual'),
 };
+
+function forward(p, tag, recover, type) {
+	if(tag) p.$tag = tag; 
+	if(recover) p.$recover = recover;
+	if(type) p.$type = type;
+	return [p];
+}

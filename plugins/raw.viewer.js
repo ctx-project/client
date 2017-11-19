@@ -1,10 +1,9 @@
 export default function Viewer(panel) {
-	// this.items = panel.items;
-	// panel.content.innerHTML = `<pre style="line-height:1.4em;margin:0;overflow:auto;height:100%;">${panel.text}</pre>`;
 };
 
 Viewer.key = 'raw';
 Viewer.type = 'contain';
+Viewer.populate = true;
 Viewer.hidden = true;
 
 Viewer.sniff = function() {
@@ -19,11 +18,10 @@ Viewer.prototype.desired = function() {
 	// ];
 }
 
-Viewer.prototype.resize = function(size) {
-}
-
-Viewer.prototype.update = function(text) {
-	
+Viewer.prototype.update = function() {
+	this.panel.content.setContent(
+		`<pre style="line-height:1.4em;margin:0;overflow:auto;height:100%;">${this.panel.records.map(r => r.tokens.map()).join('\n')}</pre>`
+	);
 }
 
 

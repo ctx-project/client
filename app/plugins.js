@@ -2,7 +2,7 @@ import LinkViewer from '../plugins/link.viewer.js'
 import RawViewer from '../plugins/raw.viewer.js'
 
 var viewers = [LinkViewer, RawViewer],
-		viewersDict = viewers.reduce((o, kvp) => { o[kvp[0]] = kvp[1]; return o; }, {});
+		viewersDict = viewers.reduce((o, v) => { o[v.key] = v; return o; }, {});
 
 export function sniffViewers (records) {
 	return viewers.length ? 
@@ -11,7 +11,7 @@ export function sniffViewers (records) {
 }
 
 export function getViewer(key) {
-	return viewersDict[key] || emptyViewer;
+	return viewersDict[key];
 }
 
 function emptyViewer() {};

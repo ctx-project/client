@@ -6,7 +6,7 @@ var Context = Samsara.DOM.Context,
 		xs = xstream.default;
 
 export default function(mount) {
-var context, launcher, page, emitter,
+var context, launcher, page, panels, emitter,
 		
 		driver = pattern$ => {
 			pattern$.addListener({next: p => rules[p.$type](p)});
@@ -37,7 +37,19 @@ var context, launcher, page, emitter,
 			},
 			
 			views({views}) {
-				page.swipeMain(Object.values(views).map(v => new Panel({record: v})));
+				panels = {};
+				
+				page.swipeMain(Object.values(views).map(record => { 
+					var panel = new Panel({record});
+					panels[record.id] = panel;
+					panel.on('pass', emitter.next.bind(emitter));
+					panel.init();
+					return panel;
+				}));
+			},
+			
+			items({id, text}) {
+				panels[id].setItems(text);
 			}
 		};
 		

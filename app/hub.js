@@ -25,9 +25,9 @@ var emitter, conn, ctxs,
 				emitter.next(pattern);
 			},
 			
-			sub({id, parentId, query}) {
+			sub({id, parent, query}) {
 				rules.drop({id});
-				ctxs[id] = (parentId ? ctxs[parentId] : conn).sub(query);
+				ctxs[id] = (parent ? ctxs[parent] : conn).sub(query);
 			},
 			
 			rewrite({id, query}) {
@@ -36,7 +36,7 @@ var emitter, conn, ctxs,
 			
 			drop({id}) {
 				//? should remove recursively; now i reset all only when topic changes
-				if(id.startsWith('~')) ctxs[id] = undefined;
+				if(+id) ctxs[id] = undefined;
 				else ctxs = {};
 			},
 			
