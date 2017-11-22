@@ -3,23 +3,24 @@ import Autosuggest from '../lib/Autosuggest.js'
 import * as Pack from '../lib/pack.js'
 import {random} from '../lib/helper.js'
 
-
 var View = Samsara.Core.View,
 		Surface = Samsara.DOM.Surface,
 		ContainerSurface = Samsara.DOM.ContainerSurface,
 		Transform = Samsara.Core.Transform,
 		Transitionable = Samsara.Core.Transitionable,
-		TouchInput = Samsara.Inputs.TouchInput;
+		TouchInput = Samsara.Inputs.TouchInput,
+		margin = 8,
+		unit = margin + 75;
 
 export default View.extend({
 	defaults: {
 		transition: {curve: 'easeInCubic', duration: 270 },
 		barHeight: 50,
-		margin: 8,
 		minimized: false,
 		minimizedOpacity: .3,
-		decrement: 50,
-		minSize: [100, 100],
+		margin,
+		decrement: unit,
+		minSize: [2 * unit, unit],
 		leadSize: [300, 300]
 	},
 	
@@ -55,6 +56,8 @@ export default View.extend({
 
 		this.layout = new FluidLayout({
 			properties: {zIndex: 1},
+			containerSelector: item => item.container,
+			handleSelector: item => item.header,
 			layers: [{
 					name: 'main',
 					corners: [0, options.barHeight, 1, -options.barHeight],
@@ -298,13 +301,17 @@ export default View.extend({
 		this.swipeItems(items, 'main', 'mainNext', 'mainPrev', 'switch');
 	},
 	
+	layoutMain: function() {
+		this.layout.layoutLayer('main');
+	},
+	
 	navigate: function(panel) {
 		this.defocus().deover();
 		this.swipeItems(getItems(10), 'main', 'mainNext', 'mainPrev', 'switch');
 	},
 	
 	getLeadSize: function(panel) {
-		return this.isLeadsOpen ? this.options.leadSize : [200, 40];	
+		return this.isLeadsOpen ? this.options.leadSize : [panel.record.query.length * 11 + 30, 42];	
 	},
 	isLeadsOpen: false,
 	toggleLeads: function(layer) {
@@ -369,7 +376,7 @@ function getBottomRank(imp) {
 }
 
 function sizer(item) {
-	return [400, 500].map(c => round(c, this.options.decrement));
+	return item.desired().map(c => round(c, this.options.decrement));
 }
 
 function round(val, inc) {

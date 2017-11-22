@@ -1,12 +1,13 @@
 import Launcher from '../views/launcher.js'
 import Page from '../views/page.js'
 import Panel from '../views/panel.js'
+import * as H from '../lib/helper.js'
 
 var Context = Samsara.DOM.Context,
 		xs = xstream.default;
 
 export default function(mount) {
-var context, launcher, page, panels, emitter,
+var context, launcher, page, panels = {}, enter = [], emitter,
 		
 		driver = pattern$ => {
 			pattern$.addListener({next: p => rules[p.$type](p)});
@@ -37,19 +38,29 @@ var context, launcher, page, panels, emitter,
 			},
 			
 			views({views}) {
-				panels = {};
+				//diff
 				
-				page.swipeMain(Object.values(views).map(record => { 
+				var requestLayout = H.debounce(() => {
+					if(enter.length) { page.swipeMain(enter); enter = []; }
+					else page.layoutMain();
+				}, 100);
+				
+				Object.values(views).forEach(record => { 
 					var panel = new Panel({record});
-					panels[record.id] = panel;
+					
 					panel.on('pass', emitter.next.bind(emitter));
+					panel.on('requestLayout', requestLayout);
+					
+					panels[record.id] = panel;
+					enter.push(panel);
+					
 					panel.init();
-					return panel;
-				}));
+				});
 			},
 			
 			items({id, text}) {
-				panels[id].setItems(text);
+				var panel = panels[id];
+				if(panel) panel.setItems(text);
 			}
 		};
 		

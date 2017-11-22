@@ -2,6 +2,7 @@ body{
 	font-family: 'Raleway', sans-serif;
 	padding: 0;
 	margin: 0;
+	font-size: 100%;
 }
 
 .shadow {
@@ -43,6 +44,12 @@ body{
 .panel {
 	border-radius: 4px;
 	background: #311b92;
+	overflow: hidden;
+	transition: border-radius 270ms;
+}
+.panel > .loader {
+	border: solid 1px white;
+	border-radius: 50%;
 }
 .panel > .header {
 	/*box-sizing: border-box;*/
@@ -53,34 +60,35 @@ body{
 	overflow: hidden;
 	white-space: nowrap;
 	text-overflow: ellipsis;
+	background: rgba(49, 27, 146, .5);
+	transition: padding 270ms, font-size 270ms;
 }
 .panel > .content {
 	box-sizing: border-box;
 	overflow-y: auto;
 	color: white;
 }
-.panel.raw > .content {
+.panel i {
+	font-style: normal;
+	opacity: .6;
+}
+.panel t {
+	font-weight: bold;
+}
+.panel.maxi {
+	border-radius: 0;
+}
+.panel.leads {
+	border-radius: 25px;
+}
+.panel.leads > .header {
+	padding: 5px 8px;
+	font-size: 16px;
+}
+.panel.raw > .content, .panel.text > .content {
 	padding: 25px;
 	padding-top: 0;
 }
-/*.panel.contain {*/
-/*	display: flex;*/
-/*	flex-direction: column;*/
-/*}*/
-/*panel.contain > div {*/
-/*	flex: 1;*/
-/*	padding: 0 24px 24px;*/
-/*}*/
-/*panel.cover > header {*/
-/*	position: absolute;*/
-/*	z-index: 1;*/
-/*	width: 100%;*/
-/*}*/
-/*panel.cover > div {*/
-/*	position: relative;*/
-/*	z-index: 0;*/
-/*	height: 100%;*/
-/*}*/
 
 
 

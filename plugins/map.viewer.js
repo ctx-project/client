@@ -1,53 +1,49 @@
-// <!--<script async defer	src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdBe_ui57UfS23cCnSjngyd6NQskwhDZY"></script>-->
+export default function Viewer(panel) {
+};
+
+Viewer.key = 'map';
+Viewer.type = 'cover';
+Viewer.populate = true;
+
+var regex = /(^|\s+)-?\d{1,2}\.?\d*\s*,\s*\d{1,3}\.?\d*($|\s+)/;
+
+Viewer.sniff = function(records) {
+	return records.filter(r => r.item.match(regex)).length / records.length;
+}
 
 
-(function() {
-	Viewer.name = 'map';
-	Viewer.type = 'cover';
-	
-	var regex = /(^|\s+)-?\d{1,2}\.?\d*\s*,\s*\d{1,3}\.?\d*($|\s+)/;
-	
-	Viewer.sniff = function(items) {
-		return items.filter(l => l.match(regex)).length / items.length;
-	}
-	
-	function Viewer(panel) {
-		var map = new google.maps.Map(panel.content, {
-			mapTypeId: google.maps.MapTypeId.TERRAIN,
-			scrollwheel: false,
-			disableDefaultUI: true
-		}),
-		bounds = new google.maps.LatLngBounds();
+Viewer.prototype.desired = function() {
+	//?should compute from bounds -> ratio, count -> multiplier
+	return [500, 300];
+}
 
-		panel.items
-			.map(l => l.match(regex))
-			.filter(m => m)
-			.forEach(m => { 
-				var parts = m[0].split(','),
-						position = {lat: +parts[0], lng: +parts[1]},
-						title = m.input.replace(/\s*~\d*\s*$/, '').replace(regex, '');
-				
-				new google.maps.Marker({position, map, title});
-				bounds.extend(position);
-			});
+Viewer.prototype.update = function() {
+	this.records = this.panel.records;
+	
+	var content = document.createElement('div');
+	content.style="width:100%; height: 100%";
+	this.panel.content.setContent(content);
+	
+	var map = new google.maps.Map(content, {
+		mapTypeId: google.maps.MapTypeId.TERRAIN,
+		scrollwheel: false,
+		disableDefaultUI: true
+	}),
+	bounds = new google.maps.LatLngBounds();
+
+	this.records
+		.map(r => r.item.match(regex))
+		.filter(l => l)
+		.forEach(l => { 
+			var parts = l[0].split(','),
+					position = {lat: +parts[0], lng: +parts[1]},
+					title = l.input.replace(/\s*~\d*\s*$/, '').replace(regex, '');
 			
-			map.fitBounds(bounds);
-	}	
-	
-	Viewer.prototype.desired = function() {
-		return [8, 6];
-	}
-	
-	Viewer.prototype.resize = function(size) {
-	}
-	
-	Viewer.prototype.update = function(text) {
+			new google.maps.Marker({position, map, title});
+			bounds.extend(position);
+		});
 		
-	}
+	map.fitBounds(bounds);
 	
-	Viewers.push(Viewer);
-	
-})();
-
-
-
+	this.panel.requestLayout();
+}

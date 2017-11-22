@@ -1,7 +1,10 @@
 import LinkViewer from '../plugins/link.viewer.js'
 import RawViewer from '../plugins/raw.viewer.js'
+import TextViewer from '../plugins/text.viewer.js'
+// import OutlineViewer from '../plugins/outline.viewer.js'
+import MapViewer from '../plugins/map.viewer.js'
 
-var viewers = [LinkViewer, RawViewer],
+var viewers = [LinkViewer, RawViewer, TextViewer, MapViewer],
 		viewersDict = viewers.reduce((o, v) => { o[v.key] = v; return o; }, {});
 
 export function sniffViewers (records) {
