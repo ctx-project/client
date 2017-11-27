@@ -307,7 +307,11 @@ export default View.extend({
 	
 	navigate: function(panel) {
 		this.defocus().deover();
-		this.swipeItems(getItems(10), 'main', 'mainNext', 'mainPrev', 'switch');
+		this.pass({$type: 'navPanel', record: panel.record});
+	},
+	
+	pass: function(pattern) {
+		this.emit('pass', pattern);
 	},
 	
 	getLeadSize: function(panel) {

@@ -27,6 +27,7 @@ var context, launcher, page, panels = {}, enter = [], emitter,
 				context.add(launcher);
 				context.add(page);
 				
+				page.on('pass', emitter.next.bind(emitter));
 				page.autosuggest.on('update', search => emitter.next({$type: 'search', search}));
 				
 				context.setPerspective(1.2 * Math.sqrt(screen.height ** 2 + screen.width ** 2));
@@ -44,7 +45,7 @@ var context, launcher, page, panels = {}, enter = [], emitter,
 					if(enter.length) { page.swipeMain(enter); enter = []; }
 					else page.layoutMain();
 				}, 100);
-				
+
 				Object.values(views).forEach(record => { 
 					var panel = new Panel({record});
 					

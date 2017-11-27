@@ -1,21 +1,23 @@
 import makeVisual from '../app/visual.js'
 import makeHub from '../app/hub.js'
 import * as $ from '../lib/bu$.js'
+import * as Logic from '../app/logic.js'
 
 var xs = xstream.default,
-		run = Cycle.default;
-
+		run = Cycle.default,
+		makeHistoryDriver = CycleHistory.makeHistoryDriver;
+l('main');
 setTimeout(() => run(main, {
 	visual: makeVisual(document.body),
 	hub: makeHub(),
-	router: $.makeEcho('router'),
+	router: makeHistoryDriver(),
 	tabs: $.makeEcho('tabs'),
 }));
 
 function main({visual, hub, router, tabs}) {
 	var visual$ = $.recover(visual, 'visual'),
 			hub$ = $.recover(hub, 'hub'),
-			router$ = $.recover(router, 'router'),
+			router$ = $.recover(router, 'router', 'route').take(1),
 			tabs$ = $.recover(tabs, 'tabs'),
  			
 			join$ = $.join(visual$, hub$, router$, tabs$),
@@ -23,9 +25,9 @@ function main({visual, hub, router, tabs}) {
 			reduce$ = $.reduce(join$, {}, rules);
 			
 	return {
+		hub: $.pick(reduce$, 'hub', {$type: 'init', base: window.location.origin, user: 'andrei'}),
 		visual: $.pick(reduce$, 'visual', {$type: 'init'}),
-		hub: $.pick(reduce$, 'hub', {$type: 'init', base: window.location.href, user: 'andrei'}),
-		router: $.pick(reduce$, 'router', {$type: 'route', route: '*View.1'}),
+		router: $.pick(reduce$, 'router'),
 		tabs: $.pick(reduce$, 'tabs'),
 	}
 }
@@ -35,13 +37,13 @@ var rules = {
 	hub_hints: (s, p) => [{$name: 'visual_hints', hints: p.hints.split('\n')}],
 	
 	router_route(s, p) { 
-		s.topic = p.route;
+		s.topic = p.pathname.slice(1);
 		s.config = null;
 		s.views = {};
 		s.leads = {};
 		
 		return [
-			{$name: 'hub_sub', id: 'topic', query: p.route},
+			{$name: 'hub_sub', id: 'topic', query: s.topic},
 			{$name: 'hub_get', id: 'topic', $recover: 'views'}
 		];
 	},
@@ -52,16 +54,11 @@ var rules = {
 		
 		return [{$name: 'visual_views', views: s.views}];
 	},
+	visual_navPanel: (s, p) => [Object.assign(Logic.getSubRoute(s.topic, p.record), {$tag: 'router'})],
+	// visual_navTopic: (s, p) => [Object.assign(Logic.getRoute(s.topic, p.index), {$tag: 'router'})],
 	
-	visual_sub: (s, p) => forward(p, 'hub'),
+	visual_sub: (s, p) => [Object.assign(p, {$tag: 'hub'})],
 
-	visual_get: (s, p) => forward(p, 'hub', 'items'),
-	hub_items: (s, p) => forward(p, 'visual'),
+	visual_get: (s, p) => [Object.assign(p, {$tag: 'hub', $recover: 'items'})],
+	hub_items: (s, p) => [Object.assign(p, {$tag: 'visual'})],
 };
-
-function forward(p, tag, recover, type) {
-	if(tag) p.$tag = tag; 
-	if(recover) p.$recover = recover;
-	if(type) p.$type = type;
-	return [p];
-}
