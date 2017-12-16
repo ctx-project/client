@@ -38,7 +38,7 @@ var context, launcher, page, panels = {}, enter = [], emitter,
 				page.autosuggest.setResults(hints);
 			},
 			
-			views({views}) {
+			views({views, topic}) {
 				//diff
 				
 				var requestLayout = H.debounce(() => {
@@ -47,7 +47,7 @@ var context, launcher, page, panels = {}, enter = [], emitter,
 				}, 100);
 
 				Object.values(views).forEach(record => { 
-					var panel = new Panel({record});
+					var panel = new Panel({record, topic});
 					
 					panel.on('pass', emitter.next.bind(emitter));
 					panel.on('requestLayout', requestLayout);

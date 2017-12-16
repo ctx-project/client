@@ -15,13 +15,14 @@ export default View.extend({
 	
 	initialize(options) {
 		this.record = options.record;
+		this.topic = options.topic;
 		
 		this.loaderPulse$ = new Transitionable(1);
 		this.loaderSize$ = new Transitionable([true, true]);
 		this.loaderAlign$ = new Transitionable([.5, .5]);
 		
 		this.container = new ContainerSurface();
-		this.header = new Surface({classes: ['header'], size: [undefined, true], origin: this.loaderAlign$, content: this.record.query});
+		this.header = new Surface({classes: ['header'], size: [undefined, true], origin: this.loaderAlign$, content: this.record.query || this.topic});
 		this.content = new Surface({classes: ['content']});
 		this.contentMargins$ = new Transitionable([0, 0]);
 		
@@ -59,15 +60,13 @@ export default View.extend({
 	},
 	
 	init() {
-		this.pass({$type: 'sub', id: this.record.id, query: this.record.query}); //, parent: 'topic'
-		
 		var Viewer = plugins.getViewer(this.record.meta['*viewer']);
 		if(Viewer) this._setViewer(Viewer);
 		else this._getItems();
 	},
 	
 	_getItems() {
-		this.pass({$type: 'get', id: this.record.id});
+		this.pass({$type: 'get', id: this.record.id, query: `${this.topic} ${this.record.query}`});
 	},
 	
 	setItems(text) {
@@ -81,15 +80,15 @@ export default View.extend({
 		setTimeout(() => {
 			this.type = Viewer.type || 'contain';
 	
-			if(Viewer.empty) this._stopLoader();
-	
 			this.container.setClasses(['panel', 'shadow', this.type, Viewer.key]);
 			this.contentMargins$.set(this.type == 'contain' ? [0, 37.5] : [0, 0]);
 			
 			this.viewer = new Viewer(this);
 			this.viewer.panel = this;
 			
-			if(Viewer.populate) {
+			if(Viewer.empty) 
+				this.requestLayout();
+			else if(Viewer.populate) {
 				if(this.records) this._update();
 				else this._getItems();
 			}

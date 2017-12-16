@@ -1,7 +1,7 @@
 var xs = xstream.default;
 
 export default function() {
-var emitter, conn, ctxs, 
+var emitter, conn, 
 		
 		driver = pattern$ => {
 			pattern$.addListener({next: p => {
@@ -17,7 +17,6 @@ var emitter, conn, ctxs,
 		rules = {
 			init({base, user}) {
 				conn = new CtxConnection(base, user);
-				ctxs = {};
 			},
 			
 			async hints(pattern) {
@@ -25,28 +24,13 @@ var emitter, conn, ctxs,
 				emitter.next(pattern);
 			},
 			
-			sub({id, parent, query}) {
-				rules.drop({id});
-				ctxs[id] = (parent ? ctxs[parent] : conn).sub(query);
-			},
-			
-			rewrite({id, query}) {
-				
-			},
-			
-			drop({id}) {
-				//? should remove recursively; now i reset all only when topic changes
-				if(+id) ctxs[id] = undefined;
-				else ctxs = {};
-			},
-			
 			async get(pattern) {
-				pattern.text = await ctxs[pattern.id].get();
+				pattern.text = await conn.get(pattern.query);
 				emitter.next(pattern);
 			},
 			
 			async put(pattern) {
-				pattern.text = await ctxs[pattern.id].put(pattern.item);
+				pattern.text = await conn.put(pattern.item);
 				emitter.next(pattern);
 			},
 		};

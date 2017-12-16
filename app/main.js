@@ -6,7 +6,7 @@ import * as Logic from '../app/logic.js'
 var xs = xstream.default,
 		run = Cycle.default,
 		makeHistoryDriver = CycleHistory.makeHistoryDriver;
-l('main');
+
 setTimeout(() => run(main, {
 	visual: makeVisual(document.body),
 	hub: makeHub(),
@@ -42,23 +42,18 @@ var rules = {
 		s.views = {};
 		s.leads = {};
 		
-		return [
-			{$name: 'hub_sub', id: 'topic', query: s.topic},
-			{$name: 'hub_get', id: 'topic', $recover: 'views'}
-		];
+		return [{$name: 'hub_get', query: `*view ${s.topic}`, $recover: 'views'}];
 	},
 	hub_views(s, p) {
 		CtxParse.text(p.text, ['tags', 'meta', 'query']).forEach(i => {
 			s.views[i.id] = i.removed ? undefined : i;
 		});
 		
-		return [{$name: 'visual_views', views: s.views}];
+		return [{$name: 'visual_views', views: s.views, topic: s.topic}];
 	},
 	visual_navPanel: (s, p) => [Object.assign(Logic.getSubRoute(s.topic, p.record), {$tag: 'router'})],
 	// visual_navTopic: (s, p) => [Object.assign(Logic.getRoute(s.topic, p.index), {$tag: 'router'})],
 	
-	visual_sub: (s, p) => [Object.assign(p, {$tag: 'hub'})],
-
 	visual_get: (s, p) => [Object.assign(p, {$tag: 'hub', $recover: 'items'})],
 	hub_items: (s, p) => [Object.assign(p, {$tag: 'visual'})],
 };
