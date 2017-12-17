@@ -12,9 +12,10 @@ Viewer.sniff = function() {
 }
 
 Viewer.prototype.desired = function() {
-	return this.records ? [
-		this.records.map(r => r.item.length).reduce((a,b) => a + b) / this.records.length * 10,
-		(this.records.length + 3) * 20
+	var records = this.panel.records;
+	return records ? [
+		records.map(r => r.item.length).reduce((a,b) => a + b) / records.length * 10,
+		(records.length + 1) * 20
 	] : null;
 }
 
@@ -25,7 +26,3 @@ Viewer.prototype.update = function() {
 	
 	this.panel.requestLayout();
 }
-
-
-
-

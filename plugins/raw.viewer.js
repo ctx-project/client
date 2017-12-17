@@ -13,9 +13,10 @@ Viewer.sniff = function() {
 }
 
 Viewer.prototype.desired = function() {
-	return this.records ? [
-		this.records.map(r => r.item.length).reduce((a,b) => a + b) / this.records.length * 8,
-		(this.records.length + 1) * 20
+	var records = this.panel.records;
+	return records ? [
+		records.map(r => r.item.length).reduce((a,b) => a + b) / records.length * 8,
+		(records.length + 1) * 20
 	] : null;
 }
 

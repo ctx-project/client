@@ -60,7 +60,7 @@ export default View.extend({
 	},
 	
 	init() {
-		var Viewer = plugins.getViewer(this.record.meta['*viewer']);
+		var Viewer = plugins.getViewer(this.record.meta.viewer);
 		if(Viewer) this._setViewer(Viewer);
 		else this._getItems();
 	},
@@ -112,8 +112,8 @@ export default View.extend({
 	},
 	
 	_getMetaDesired() {
-		var width = +this.record.meta['*width'],
-				height = +this.record.meta['*height'];
+		var width = +this.record.meta.width,
+				height = +this.record.meta.height;
 				
 		return width && height ? [width, height] : null;		
 	}

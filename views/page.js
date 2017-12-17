@@ -380,7 +380,11 @@ function getBottomRank(imp) {
 }
 
 function sizer(item) {
-	return item.desired().map(c => round(c, this.options.decrement));
+	return item.desired().map(c => ceil(c, this.options.decrement));
+}
+
+function ceil(val, inc) {
+	return Math.ceil(val / inc) * inc;
 }
 
 function round(val, inc) {

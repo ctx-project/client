@@ -1,4 +1,10 @@
+import * as H from '../lib/helper.js'
+
 export default function Viewer(panel) {
+	this.content = document.createElement('div');
+	this.content.style = "width:100%; height: 100%";
+	panel.content.setContent(this.content);
+	this.ddraw = H.debounce(this.draw, 200);
 };
 
 Viewer.key = 'map';
@@ -8,7 +14,7 @@ Viewer.populate = true;
 var regex = /(^|\s+)-?\d{1,2}\.?\d*\s*,\s*\d{1,3}\.?\d*($|\s+)/;
 
 Viewer.sniff = function(records) {
-	return records.filter(r => r.item.match(regex)).length / records.length;
+	return records.filter(r => r.item.match(regex)).length / (records.length || 1);
 }
 
 
@@ -18,20 +24,19 @@ Viewer.prototype.desired = function() {
 }
 
 Viewer.prototype.update = function() {
-	this.records = this.panel.records;
-	
-	var content = document.createElement('div');
-	content.style="width:100%; height: 100%";
-	this.panel.content.setContent(content);
-	
-	var map = new google.maps.Map(content, {
+	this.panel.requestLayout();
+	this.ddraw();
+}
+
+Viewer.prototype.draw = function() {
+	var map = new google.maps.Map(this.content, {
 		mapTypeId: google.maps.MapTypeId.TERRAIN,
 		scrollwheel: false,
 		disableDefaultUI: true
 	}),
 	bounds = new google.maps.LatLngBounds();
 
-	this.records
+	this.panel.records
 		.map(r => r.item.match(regex))
 		.filter(l => l)
 		.forEach(l => { 
@@ -44,6 +49,5 @@ Viewer.prototype.update = function() {
 		});
 		
 	map.fitBounds(bounds);
-	
-	this.panel.requestLayout();
-}
+};
+
