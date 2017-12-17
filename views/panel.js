@@ -20,21 +20,33 @@ export default View.extend({
 		this.loaderPulse$ = new Transitionable(1);
 		this.loaderSize$ = new Transitionable([true, true]);
 		this.loaderAlign$ = new Transitionable([.5, .5]);
+		this.moreOpacity$ = new Transitionable(0);
 		
 		this.container = new ContainerSurface();
 		this.header = new Surface({classes: ['header'], size: [undefined, true], origin: this.loaderAlign$, content: this.record.query || this.topic});
 		this.content = new Surface({classes: ['content']});
+		this.more = new Surface({classes: ['more'], size: [true, true], origin: [1, 0], opacity: this.moreOpacity$,  content: '›'});
 		this.contentMargins$ = new Transitionable([0, 0]);
 		
 		this.add(this.container);
-		this.container.add({align: [0, 1], origin: [0, 1], margins: this.contentMargins$}).add(this.content);
-		this.container.add({
-			size: this.loaderSize$,
-			align: this.loaderAlign$,
-		  transform: this.loaderPulse$.map(v => Transform.scale([v, v, 1]))
-		 }).add(this.header);
+		
+		this.container
+				.add({align: [0, 1], origin: [0, 1], margins: this.contentMargins$})
+				.add(this.content);
+		
+		this.container
+				.add({
+					size: this.loaderSize$,
+					align: this.loaderAlign$,
+				  transform: this.loaderPulse$.map(v => Transform.scale([v, v, 1]))
+				 })
+				 .add(this.header);
 
-		this.loaderPulse$.loop([
+		this.container
+				.add({align: [1, 0] })
+				.add(this.more);
+
+	 this.loaderPulse$.loop([
 			[1.3, {curve : 'easeInCubic', duration : 500}], 
 			[1, {curve : 'spring', period : 250, damping : 0.5}] 
 		]);

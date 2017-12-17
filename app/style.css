@@ -51,7 +51,7 @@ body{
 	border: solid 1px white;
 	border-radius: 50%;
 }
-.panel > .header {
+.panel > .header, .panel > .more {
 	/*box-sizing: border-box;*/
 	border: solid 7px transparent;
 	padding: 18px;
@@ -60,8 +60,13 @@ body{
 	overflow: hidden;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	background: rgba(49, 27, 146, .5);
 	transition: padding 270ms, font-size 270ms;
+}
+.panel > .header {
+	background: rgba(49, 27, 146, .5);
+}
+.panel > .more {
+	font-weight: bold;
 }
 .panel > .content {
 	box-sizing: border-box;
@@ -81,7 +86,7 @@ body{
 .panel.leads {
 	border-radius: 25px;
 }
-.panel.leads > .header {
+.panel.leads > .header, .panel.leads > .more {
 	padding: 5px 8px;
 	font-size: 16px;
 }

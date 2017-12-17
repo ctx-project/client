@@ -42,7 +42,7 @@ var rules = {
 		s.views = {};
 		s.leads = {};
 		
-		return [{$name: 'hub_get', query: `*view ${s.topic}`, $recover: 'views'}];
+		return [{$name: 'hub_get', query: `*view ${s.topic}`, flags: {exact: true}, $recover: 'views'}];
 	},
 	hub_views(s, p) {
 		CtxParse.text(p.text, ['tags', 'meta', 'query']).forEach(i => {

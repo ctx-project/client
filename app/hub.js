@@ -25,7 +25,12 @@ var emitter, conn,
 			},
 			
 			async get(pattern) {
-				pattern.text = await conn.get(pattern.query);
+				pattern.text = await conn.get(pattern.query, pattern.flags);
+				emitter.next(pattern);
+			},
+			
+			async head(pattern) {
+				pattern.text = await conn.head(pattern.query, pattern.flags);
 				emitter.next(pattern);
 			},
 			

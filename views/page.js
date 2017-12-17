@@ -315,7 +315,7 @@ export default View.extend({
 	},
 	
 	getLeadSize: function(panel) {
-		return this.isLeadsOpen ? this.options.leadSize : [panel.record.query.length * 11 + 30, 42];	
+		return this.isLeadsOpen ? this.options.leadSize : [(panel.record.query.length + 2) * 8 + 30, 42];	
 	},
 	isLeadsOpen: false,
 	toggleLeads: function(layer) {
