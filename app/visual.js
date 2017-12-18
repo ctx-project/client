@@ -59,9 +59,9 @@ var context, launcher, page, panels = {}, enter = [], emitter,
 				});
 			},
 			
-			items({id, text}) {
-				var panel = panels[id];
-				if(panel) panel.setItems(text);
+			panel(pattern) {
+				var panel = panels[pattern.id];
+				if(panel) panel.relay(pattern);
 			}
 		};
 		

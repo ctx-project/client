@@ -17,7 +17,7 @@ setTimeout(() => run(main, {
 function main({visual, hub, router, tabs}) {
 	var visual$ = $.recover(visual, 'visual'),
 			hub$ = $.recover(hub, 'hub'),
-			router$ = $.recover(router, 'router', 'route').take(1),
+			router$ = $.recover(router, 'router', 'route'),
 			tabs$ = $.recover(tabs, 'tabs'),
  			
 			join$ = $.join(visual$, hub$, router$, tabs$),
@@ -54,6 +54,7 @@ var rules = {
 	visual_navPanel: (s, p) => [Object.assign(Logic.getSubRoute(s.topic, p.record), {$tag: 'router'})],
 	// visual_navTopic: (s, p) => [Object.assign(Logic.getRoute(s.topic, p.index), {$tag: 'router'})],
 	
-	visual_get: (s, p) => [Object.assign(p, {$tag: 'hub', $recover: 'items'})],
-	hub_items: (s, p) => [Object.assign(p, {$tag: 'visual'})],
+	visual_get: (s, p) => [Object.assign(p, {$tag: 'hub', $recover: 'panel'})],
+	visual_head: (s, p) => [Object.assign(p, {$tag: 'hub', $recover: 'panel'})],
+	hub_panel: (s, p) => [Object.assign(p, {$tag: 'visual'})],
 };

@@ -56,39 +56,40 @@ export default View.extend({
 		this.emit('pass', pattern);
 	},
 	
-	requestLayout() {
-		this._stopLoader();
-		this.emit('requestLayout');
-	},
-	
-	_stopLoader() {
-		if(!this.loaderPulse$) return;
-
-		this.loaderPulse$.halt();
-		this.loaderPulse$.set(1, this.options.transition);
-		this.loaderSize$.set([undefined, undefined], this.options.transition);
-		this.loaderAlign$.set([0, 0], this.options.transition);
-		this.loaderPulse$ = null;
+	relay(pattern) {
+		this[pattern.task](CtxParse.text(pattern.text));
 	},
 	
 	init() {
-		var Viewer = plugins.getViewer(this.record.meta.viewer);
-		if(Viewer) this._setViewer(Viewer);
-		else this._getItems();
-	},
-	
-	_getItems() {
-		this.pass({$type: 'get', id: this.record.id, query: `${this.topic} ${this.record.query}`});
-	},
-	
-	setItems(text) {
-		this.records = CtxParse.text(text);
+		this.getMore();
 		
-		if(this.viewer) this._update();
-		else this._setViewer(plugins.sniffViewers(this.records));
+		var Viewer = plugins.getViewer(this.record.meta.viewer);
+		
+		if(Viewer) this.setViewer(Viewer);
+		else this.getItems();
 	},
 	
-	_setViewer(Viewer) {
+	getItems() {
+		this.pass({$type: 'get', id: this.record.id, task:'setItems', query: `-*view ${this.topic} ${this.record.query}`});
+	},
+	
+	setItems(records) {
+		this.records = records;
+
+		if(this.viewer) this.update();
+		else this.setViewer(plugins.sniffViewers(this.records));
+	},
+	
+	getMore() {
+		this.pass({$type: 'head', flags: {exact: true}, id: this.record.id, task:'setMore', query: `*view ${this.topic} ${this.record.query}`});
+	},
+	
+	setMore(records) {
+		if(records.length && records[0].item == 'true') 
+			this.moreOpacity$.set(1, this.options.transition);
+	},
+	
+	setViewer(Viewer) {
 		setTimeout(() => {
 			this.type = Viewer.type || 'contain';
 	
@@ -101,20 +102,35 @@ export default View.extend({
 			if(Viewer.empty) 
 				this.requestLayout();
 			else if(Viewer.populate) {
-				if(this.records) this._update();
-				else this._getItems();
+				if(this.records) this.update();
+				else this.getItems();
 			}
 		});	
 	},
 	
-	_update: function() {
+	requestLayout() {
+		this.stopLoader();
+		this.emit('requestLayout');
+	},
+	
+	stopLoader() {
+		if(!this.loaderPulse$) return;
+
+		this.loaderPulse$.halt();
+		this.loaderPulse$.set(1, this.options.transition);
+		this.loaderSize$.set([undefined, undefined], this.options.transition);
+		this.loaderAlign$.set([0, 0], this.options.transition);
+		this.loaderPulse$ = null;
+	},
+	
+	update: function() {
 		this.viewer.update();
 	},
 	
 	desired() {
 		var viewer = this.viewer,
 				desired = (viewer && viewer.desired ? viewer.desired() : null) || 
-									this._getMetaDesired() ||
+									this.getMetaDesired() ||
 									[200, 200];
 				
 		if(this.type == 'contain') desired[1] = desired[1] + 75;
@@ -123,7 +139,7 @@ export default View.extend({
 		return desired;
 	},
 	
-	_getMetaDesired() {
+	getMetaDesired() {
 		var width = +this.record.meta.width,
 				height = +this.record.meta.height;
 				
