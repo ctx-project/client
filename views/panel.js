@@ -23,7 +23,7 @@ export default View.extend({
 		this.moreOpacity$ = new Transitionable(0);
 		
 		this.container = new ContainerSurface();
-		this.header = new Surface({classes: ['header'], size: [undefined, true], origin: this.loaderAlign$, content: this.record.query || this.topic});
+		this.header = new Surface({classes: ['header'], size: [undefined, true], origin: this.loaderAlign$, content: this.record.query || this.topic.item});
 		this.content = new Surface({classes: ['content']});
 		this.more = new Surface({classes: ['more'], size: [true, true], origin: [1, 0], opacity: this.moreOpacity$,  content: '›'});
 		this.contentMargins$ = new Transitionable([0, 0]);
@@ -70,7 +70,7 @@ export default View.extend({
 	},
 	
 	getItems() {
-		this.pass({$type: 'get', id: this.record.id, task:'setItems', query: `-*view ${this.topic} ${this.record.query}`});
+		this.pass({$type: 'get', id: this.record.id, task:'setItems', query: `-*view ${this.topic.item} ${this.record.query}`});
 	},
 	
 	setItems(records) {
@@ -81,7 +81,7 @@ export default View.extend({
 	},
 	
 	getMore() {
-		this.pass({$type: 'head', flags: {exact: true}, id: this.record.id, task:'setMore', query: `*view ${this.topic} ${this.record.query}`});
+		this.pass({$type: 'head', flags: {exact: true}, id: this.record.id, task:'setMore', query: `*view ${this.topic.item} ${this.record.query}`});
 	},
 	
 	setMore(records) {
