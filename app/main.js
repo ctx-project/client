@@ -59,7 +59,5 @@ var rules = {
 	visual_navPanel: (s, p) => [Object.assign(Logic.getRoute(s.user, s.topic, CtxCompose.combineTopicView(s.topic, p.record)), {$tag: 'router'})],
 	// visual_navTopic: (s, p) => [Object.assign(Logic.getRoute(s.topic, p.index), {$tag: 'router'})],
 	
-	visual_get: (s, p) => [Object.assign(p, {$tag: 'hub', $recover: 'panel'})],
-	visual_head: (s, p) => [Object.assign(p, {$tag: 'hub', $recover: 'panel'})],
-	hub_panel: (s, p) => [Object.assign(p, {$tag: 'visual'})],
+	visual_panelData: (s, p) => [Object.assign(p, {$tag: 'hub', $fw: 'visual_panel'})],
 };

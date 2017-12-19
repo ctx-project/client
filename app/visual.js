@@ -61,7 +61,7 @@ var context, launcher, page, panels = {}, enter = [], emitter,
 			
 			panel(pattern) {
 				var panel = panels[pattern.id];
-				if(panel) panel.relay(pattern);
+				if(panel) panel.recover(pattern);
 			}
 		};
 		

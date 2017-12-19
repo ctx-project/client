@@ -52,12 +52,16 @@ export default View.extend({
 		]);
 	},
 	
-	pass(pattern) {
+	pass($type, $retype, recover, pattern) {
+		pattern.$type = $type;
+		if($retype) pattern.$retype = $retype;
+		pattern.recover = recover;
+		pattern.id = this.record.id;
 		this.emit('pass', pattern);
 	},
 	
-	relay(pattern) {
-		this[pattern.task](CtxParse.text(pattern.text));
+	recover(pattern) {
+		this[pattern.recover](pattern);
 	},
 	
 	init() {
@@ -69,24 +73,24 @@ export default View.extend({
 		else this.getItems();
 	},
 	
-	getItems() {
-		this.pass({$type: 'get', id: this.record.id, task:'setItems', query: `-*view ${this.topic.item} ${this.record.query}`});
+	getMore() {
+		this.pass('panelData', 'head', 'setMore', {flags: {exact: true}, query: `*view ${this.topic.item} ${this.record.query}`});
 	},
 	
-	setItems(records) {
-		this.records = records;
+	setMore(pattern) {
+		if(pattern.text == 'true') 
+			this.moreOpacity$.set(1, this.options.transition);
+	},
+	
+	getItems() {
+		this.pass('panelData', 'get', 'setItems', {query: `-*view ${this.topic.item} ${this.record.query}`});
+	},
+	
+	setItems(pattern) {
+		this.records = CtxParse.text(pattern.text);
 
 		if(this.viewer) this.update();
 		else this.setViewer(plugins.sniffViewers(this.records));
-	},
-	
-	getMore() {
-		this.pass({$type: 'head', flags: {exact: true}, id: this.record.id, task:'setMore', query: `*view ${this.topic.item} ${this.record.query}`});
-	},
-	
-	setMore(records) {
-		if(records.length && records[0].item == 'true') 
-			this.moreOpacity$.set(1, this.options.transition);
 	},
 	
 	setViewer(Viewer) {
@@ -108,11 +112,6 @@ export default View.extend({
 		});	
 	},
 	
-	requestLayout() {
-		this.stopLoader();
-		this.emit('requestLayout');
-	},
-	
 	stopLoader() {
 		if(!this.loaderPulse$) return;
 
@@ -125,6 +124,11 @@ export default View.extend({
 	
 	update: function() {
 		this.viewer.update();
+	},
+	
+	requestLayout() {
+		this.stopLoader();
+		this.emit('requestLayout');
 	},
 	
 	desired() {
