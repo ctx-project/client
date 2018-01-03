@@ -36,7 +36,7 @@ export default View.extend({
 	
 		this.menu = new ContainerSurface({
 			size: [undefined, options.barHeight],
-			// properties: {background: 'red'}
+			properties: {background: 'red'}
 		});
 
 		var randO = t => Math.random(),

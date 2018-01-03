@@ -39,12 +39,12 @@ var context, launcher, page, panels = {}, enter = [], emitter,
 			},
 			
 			views({views, topic}) {
-				//diff
-				
 				var requestLayout = H.debounce(() => {
 					if(enter.length) { page.swipeMain(enter); enter = []; }
 					else page.layoutMain();
 				}, 100);
+
+				panels = {};
 
 				Object.values(views).forEach(record => { 
 					var panel = new Panel({record, topic});
@@ -64,12 +64,6 @@ var context, launcher, page, panels = {}, enter = [], emitter,
 				if(panel) panel.recover(pattern);
 			}
 		};
-		
-		// var updateViewsD = debounce(update);
-		
-		// function updateViews(views) {
-			
-		// }
 		
 		return driver;
 }
