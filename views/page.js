@@ -34,11 +34,6 @@ export default View.extend({
 			}
 		});
 	
-		this.menu = new ContainerSurface({
-			size: [undefined, options.barHeight],
-			properties: {background: 'red'}
-		});
-
 		var randO = t => Math.random(),
 				mainPacker = (items, size) => Pack.pressureArea(items, size, 
 				 sizer.bind(this),
@@ -56,9 +51,20 @@ export default View.extend({
 
 		this.layout = new FluidLayout({
 			properties: {zIndex: 1},
-			containerSelector: item => item.container,
-			handleSelector: item => item.header,
+			//?redesign selectors for multiple objects - panels/topic steps
+			containerSelector: item => item.container || item,
+			handleSelector: item => item.header || item,
 			layers: [{
+					name: 'topic',
+					corners: [0, 0, 1, options.barHeight],
+					margins: [options.margin, options.margin, 0, 0],
+					packer: (items, size) => Pack.horizontalLine(items, size, step => [(step.getContent().length + 4) * 12, options.barHeight - options.margin], options.margin),
+					gestures: {
+						'tap': this.tapTopic.bind(this),
+						// 'bottom': this.exclude.bind(this),
+						// 'top': this.maximize.bind(this),
+					}
+				}, {
 					name: 'main',
 					corners: [0, options.barHeight, 1, -options.barHeight],
 					margins: [options.margin, options.margin, 0, 0],
@@ -160,7 +166,6 @@ export default View.extend({
 			properties: {zIndex: 2, display: 'none'},
 		});
 		
-		this.container.add(this.menu);
 		this.container.add(this.layout);
 		this.container.add(this.overlay);
 		
@@ -197,10 +202,10 @@ export default View.extend({
 		}).add(this.container);
 		
 		this.minimized = false;
-		this.handle = new TouchInput();
-		this.handle.subscribe(this.menu);
-		this.handle.subscribe(this.overlay);
-		this.handle.on('end', this.toggle.bind(this));
+		// this.handle = new TouchInput();
+		// this.handle.subscribe(this.menu);
+		// this.handle.subscribe(this.overlay);
+		// this.handle.on('end', this.toggle.bind(this));
 		
 		if(options.minimized) this.toggle();
 	},
@@ -212,6 +217,19 @@ export default View.extend({
 		var props = this.overlay.getProperties();
 		props.display = this.minimized ? 'block' : 'none';
 		this.overlay.setProperties(props);
+	},
+
+	setTopic(topic) {
+		this.layout.forEachItem(topic.tokens.map((t, ix) => new Surface({
+			classes: ['topic'],
+			content: t.body,
+			index: ix
+		})), 'add', 'topic');
+		this.layout.layoutLayer('topic');
+	},
+	
+	tapTopic(step) {
+		l(step.getOptions().index);
 	},
 
 	hasItems: function(layer) {

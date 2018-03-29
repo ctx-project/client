@@ -1,149 +1,100 @@
 <style>
 	body {
-		background: darkgray;
 		font-family: arial;
-		padding: 0;
-		margin: 0;
-		height: 100%;
 	}
-	/*div {*/
-	/*	position: absolute;*/
-	/*	width: 120px;*/
-	/*	height: 160px;*/
-	/*	background: rgba(20, 40, 40, .8);*/
-	/*	border: 3px solid rgba(40, 60, 60, .8);*/
-	/*	border-radius: 3px;*/
-	/*	box-shadow: 0 0 8px rgba(80, 120, 120, .9);*/
-	/*	color: rgba(80, 120, 120, .9);*/
-	/*	display: flex;*/
-	/*	flex-direction: column;*/
-	/*	align-items: center;*/
-	/*	justify-content: center;*/
-	/*	text-shadow: 0 0 5px rgba(80, 120, 120, .9);*/
-	/*	display: none;*/
-	/*}*/
-	/*big {*/
-	/*	font-size: 48px;*/
-	/*	margin-bottom: 8px;*/
-		/*font-weight: bold;*/
-	/*}*/
-	/*small {*/
-	/*	opacity: .6;*/
-	/*	letter-spacing: 3px;*/
-	/*}*/
-	/*span {*/
-	/*	margin-top: 40px;*/
-	/*	font-weight: bold;*/
-	/*}*/
-	div {
-		box-shadow: 0 15px 60px 0 rgba(42,44,58,.15), 7px 15px 22px 0 rgba(129,165,238,.1);
+	
+	div[contenteditable] {
+		background: blue;
+		color: white;
+		height: 200px;
+		padding: 10px;
 	}
-	.samsara-container {
-		background: #f2f2f2;
-	}
-	bg {
-		position: absolute;
-		top: 0; left: 0;
-		bottom: 0; right: 0;
-		background-image: url("http://www.wallpaperup.com/wallpaper/download/297307/2560/1600");
-		/*background-image: url("https://i.pinimg.com/originals/a2/ce/68/a2ce68199f18e764243d50924efa7e2b.jpg");*/
-		background-size: cover;
-	}
-
+	
 </style>
+
+<!--<script src="node_modules/samsarajs/dist/samsara.min.js "></script>-->
+<!--<link rel="stylesheet" type="text/css" href="node_modules/samsarajs/dist/samsara.css"/>-->
+
+<script src="/node_modules/@ctx/language/parser.js"></script>
+<script src="/node_modules/@ctx/language/parse.js"></script>
+<script src="/node_modules/@ctx/language/compose.js"></script>
+
+
 <body>
-	<bg>ffr</bg>
+	<div id="content" contenteditable></div>
+
 </body>
-<!--<div>-->
-<!--	<big>HF</big>-->
-<!--	<small>hafnium</small>-->
-<!--	<span>280</span>-->
-<!--</div>-->
-
-<!--<div style="top:30px;left:50px">-->
-<!--	<big>BE</big>-->
-<!--	<small>berilium</small>-->
-<!--	<span>280</span>-->
-<!--</div>-->
-
-<!--<div style="top:120px;left:200px">-->
-<!--	<big>CB</big>-->
-<!--	<small>cobalt</small>-->
-<!--	<span>280</span>-->
-<!--</div>-->
-
-<!--<div style="top:80px;left:15px">-->
-<!--	<big>MG</big>-->
-<!--	<small>magnezium</small>-->
-<!--	<span>280</span>-->
-<!--</div>-->
-
-<script src="node_modules/samsarajs/dist/samsara.min.js "></script>
-<link rel="stylesheet" type="text/css" href="node_modules/samsarajs/dist/samsara.css"/>
 
 <script>
-var	Context = Samsara.DOM.Context,
-		Surface = Samsara.DOM.Surface,
-		ContainerSurface = Samsara.DOM.ContainerSurface,
-		Transform = Samsara.Core.Transform,
-		Transitionable = Samsara.Core.Transitionable,
-		Stream = Samsara.Streams.Stream,
-		MouseInput = Samsara.Inputs.MouseInput,
-		TouchInput = Samsara.Inputs.TouchInput,
-		GenericInput = Samsara.Inputs.GenericInput,
-		Accumulator = Samsara.Streams.Accumulator,
-		Differential = Samsara.Streams.Differential;
-		
-		var context = new Context();
-		context.setPerspective(2304);
-		
-		var translate1 = new Transitionable(0),
-				rotate1 = new Transitionable(0),
-				opacity = new Transitionable(1),
-				rt1 = Stream.lift((r, t) => Transform.compose(Transform.translate([0, 2.5 * t, -4 * t]), Transform.rotateX(-r)), [rotate1, translate1]);
-				// translate2 = new Transitionable(500),
-				// rotate2 = new Transitionable(Math.PI / 2),
-				// rt2 = Stream.lift((r, t) => Transform.compose(Transform.translate([0, t, -4 * t]), Transform.rotateX(r)), [rotate2, translate2]);
 
-		var launcher = new Surface({
-			content: '<h1>blah blah</h1><center><ul><li>project1</li><li>project1</li><li>project1</li><li>project1</li></ul></center>',
-			properties: {'box-shadow': 'none'},
-			proportions: [1, .5]
-		});
-		context.add({
-			 //transform: rt2,
-		}).add(launcher);
-		
-		var container = new ContainerSurface({origin: [0, 1]});
-		context.add({
-			 transform: rt1,
-			 align: [0, 1],
-			 opacity,
-		}).add(container);
-		container.add({align: [.1, .1]}).add(new Surface({
-			properties : {background : 'blue'},
-			proportions: [.3, .3],
-		}));
-		container.add({align: [.9, .9]}).add(new Surface({
-			properties : {background : 'green'},
-			proportions: [.3, .3],
-			origin: [1, 1],
-		}));
-		
-		
-		var state = false,
-				transition = {curve : 'easeInCubic', duration: 150 },
-				handle = new TouchInput();
-		handle.subscribe(container);
-		handle.on('end', d => {
-			// rotate1.set(state ? 0 : Math.PI / 4, transition);
-			translate1.set(state ? 0 : 300, transition);
-			opacity.set(state ? 1 : .5, transition);
-			// rotate2.set(state ? Math.PI / 2 : 0, transition);
-			// translate2.set(state ? 500 : 0, transition);
-			state = !state;
-		});
+var text = `se buseste la relogin 1 ~1246
+conflict bio/client ~1247
+in posturi cu multe poze, pe Iphone mi se blocheaza scroll ~1248
+Important touch edit unit ia si add res ~1250
+*view important ~1305`;
 
-		context.mount(document.body);
+var serialize = CtxCompose.getItemSerializer({tag: ['<b>', '</b>'], id: false});
+						
+						
+window.onload = function() {
+	var content = document.getElementById('content');
+	content.addEventListener('input', function(e) {
+		var current = window.getSelection().anchorNode;
+		while(current.parentNode != content) current = current.parentNode;
+		
+		var sel = saveSelection(content);
+		// console.dir(CtxParse.item(current.innerText).tokens);
+		console.log(current.innerText == 'se			 buseste la relogin 1');
+		current.innerHTML = serialize(CtxParse.item(current.innerText));
+		restoreSelection(content, sel);
+		// console.dir(current.innerText);		
+		console.dir(current.innerText);		
+	});
+	content.innerHTML = '<div>' + CtxCompose.getTextSerializer({tag: ['<b>', '</b>'], id: false}, '</div><div>')(CtxParse.text(text)) + "</div>";
+}
+
+saveSelection = function(containerEl) {
+		var range = window.getSelection().getRangeAt(0);
+		var preSelectionRange = range.cloneRange();
+		preSelectionRange.selectNodeContents(containerEl);
+		preSelectionRange.setEnd(range.startContainer, range.startOffset);
+		var start = preSelectionRange.toString().length;
+
+		return {
+				start: start,
+				end: start + range.toString().length
+		};
+};
+
+restoreSelection = function(containerEl, savedSel) {
+		var charIndex = 0, range = document.createRange();
+		range.setStart(containerEl, 0);
+		range.collapse(true);
+		var nodeStack = [containerEl], node, foundStart = false, stop = false;
+
+		while (!stop && (node = nodeStack.pop())) {
+				if (node.nodeType == 3) {
+						var nextCharIndex = charIndex + node.length;
+						if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
+								range.setStart(node, savedSel.start - charIndex);
+								foundStart = true;
+						}
+						if (foundStart && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
+								range.setEnd(node, savedSel.end - charIndex);
+								stop = true;
+						}
+						charIndex = nextCharIndex;
+				} else {
+						var i = node.childNodes.length;
+						while (i--) {
+								nodeStack.push(node.childNodes[i]);
+						}
+				}
+		}
+
+		var sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.addRange(range);
+}
 
 </script>

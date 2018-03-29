@@ -21,7 +21,7 @@ Viewer.prototype.desired = function() {
 
 Viewer.prototype.update = function() {
 	this.panel.content.setContent(
-		`<div style="overflow:auto;line-height: 1.4em; height:100%;">${serializeText(this.panel.records)}</div>`
+		`<div style="overflow:auto;line-height: 1.4em; height:100%;outline:none;" contenteditable=true>${serializeText(this.panel.records)}</div>`
 	);
 	
 	this.panel.requestLayout();

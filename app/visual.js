@@ -39,6 +39,8 @@ var context, launcher, page, panels = {}, enter = [], emitter,
 			},
 			
 			views({views, topic}) {
+				page.setTopic(topic);
+				
 				var requestLayout = H.debounce(() => {
 					if(enter.length) { page.swipeMain(enter); enter = []; }
 					else page.layoutMain();
