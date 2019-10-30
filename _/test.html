@@ -7,9 +7,10 @@
 		background: blue;
 		color: white;
 		height: 200px;
+		width: 700px;
 		padding: 10px;
 	}
-	
+
 </style>
 
 <!--<script src="node_modules/samsarajs/dist/samsara.min.js "></script>-->
@@ -19,13 +20,25 @@
 <script src="/node_modules/@ctx/language/parse.js"></script>
 <script src="/node_modules/@ctx/language/compose.js"></script>
 
+<script src="//rawgit.com/snabbdom/snabbdom/master/dist/snabbdom.min.js"></script>
+<!--<script src="//rawgit.com/snabbdom/snabbdom/master/dist/snabbdom-style.min.js"></script>-->
+<!--<script src="//rawgit.com/snabbdom/snabbdom/master/dist/snabbdom-class.min.js"></script>-->
+<script src="//rawgit.com/snabbdom/snabbdom/master/dist/snabbdom-props.min.js"></script>
+<script src="//rawgit.com/snabbdom/snabbdom/master/dist/snabbdom-attributes.min.js"></script>
+<!--<script src="//rawgit.com/snabbdom/snabbdom/master/dist/snabbdom-eventlisteners.min.js"></script>-->
+<script src="//rawgit.com/snabbdom/snabbdom/master/dist/h.min.js"></script>
+
 
 <body>
 	<div id="content" contenteditable></div>
-
 </body>
 
 <script>
+
+h = h.default;
+var patch = snabbdom.init([snabbdom_attributes.default]),
+		container = document.getElementById('content'),
+		cvnode, nvnode;
 
 var text = `se buseste la relogin 1 ~1246
 conflict bio/client ~1247
@@ -33,68 +46,102 @@ in posturi cu multe poze, pe Iphone mi se blocheaza scroll ~1248
 Important touch edit unit ia si add res ~1250
 *view important ~1305`;
 
-var serialize = CtxCompose.getItemSerializer({tag: ['<b>', '</b>'], id: false});
-						
-						
-window.onload = function() {
-	var content = document.getElementById('content');
-	content.addEventListener('input', function(e) {
-		var current = window.getSelection().anchorNode;
-		while(current.parentNode != content) current = current.parentNode;
+function gen(text) {
+	return h('div', {attrs: {id: 'content', contenteditable: ''}}, text.split('\n').map(l => { 
+		var words = l.replace(' ', ' ').split(' ').filter(w => w),
+				nodes = [], w, span = '';
 		
-		var sel = saveSelection(content);
-		// console.dir(CtxParse.item(current.innerText).tokens);
-		console.log(current.innerText == 'se			 buseste la relogin 1');
-		current.innerHTML = serialize(CtxParse.item(current.innerText));
-		restoreSelection(content, sel);
-		// console.dir(current.innerText);		
-		console.dir(current.innerText);		
-	});
-	content.innerHTML = '<div>' + CtxCompose.getTextSerializer({tag: ['<b>', '</b>'], id: false}, '</div><div>')(CtxParse.text(text)) + "</div>";
-}
-
-saveSelection = function(containerEl) {
-		var range = window.getSelection().getRangeAt(0);
-		var preSelectionRange = range.cloneRange();
-		preSelectionRange.selectNodeContents(containerEl);
-		preSelectionRange.setEnd(range.startContainer, range.startOffset);
-		var start = preSelectionRange.toString().length;
-
-		return {
-				start: start,
-				end: start + range.toString().length
-		};
-};
-
-restoreSelection = function(containerEl, savedSel) {
-		var charIndex = 0, range = document.createRange();
-		range.setStart(containerEl, 0);
-		range.collapse(true);
-		var nodeStack = [containerEl], node, foundStart = false, stop = false;
-
-		while (!stop && (node = nodeStack.pop())) {
-				if (node.nodeType == 3) {
-						var nextCharIndex = charIndex + node.length;
-						if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
-								range.setStart(node, savedSel.start - charIndex);
-								foundStart = true;
-						}
-						if (foundStart && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
-								range.setEnd(node, savedSel.end - charIndex);
-								stop = true;
-						}
-						charIndex = nextCharIndex;
-				} else {
-						var i = node.childNodes.length;
-						while (i--) {
-								nodeStack.push(node.childNodes[i]);
-						}
-				}
+		for(var i = 0; i < words.length; i++)	{
+			w = words[i];
+// console.log(w.charCodeAt(0));
+			
+			if(i) span += ' ';
+			
+			if(w.length < 4) {
+				if(span) nodes.push(h('span',span));
+				span = '';
+				nodes.push(h('b', w));
+			}
+			else
+				span += w;
 		}
-
-		var sel = window.getSelection();
-		sel.removeAllRanges();
-		sel.addRange(range);
+			
+		if(span) nodes.push(h('span', span));
+		
+		return h('div', nodes);
+	}));
 }
+
+patch(container, cvnode = gen(text));
+
+container = document.getElementById('content');
+container.addEventListener('input', function(e) {
+	patch(cvnode, nvnode = gen(container.innerText));
+	cvnode = nvnode;
+});
+
+// var serialize = CtxCompose.getItemSerializer({tag: ['<b>', '</b>'], id: false});
+						
+						
+// window.onload = function() {
+// 	var content = document.getElementById('content');
+// 	content.addEventListener('input', function(e) {
+// 		var current = window.getSelection().anchorNode;
+// 		while(current.parentNode != content) current = current.parentNode;
+		
+// 		var sel = saveSelection(content);
+// 		// console.dir(CtxParse.item(current.innerText).tokens);
+// 		console.log(current.innerText == 'se			 buseste la relogin 1');
+// 		current.innerHTML = serialize(CtxParse.item(current.innerText));
+// 		restoreSelection(content, sel);
+// 		// console.dir(current.innerText);		
+// 		console.dir(current.innerText);		
+// 	});
+// 	content.innerHTML = '<div>' + CtxCompose.getTextSerializer({tag: ['<b>', '</b>'], id: false}, '</div><div>')(CtxParse.text(text)) + "</div>";
+// }
+
+// saveSelection = function(containerEl) {
+// 		var range = window.getSelection().getRangeAt(0);
+// 		var preSelectionRange = range.cloneRange();
+// 		preSelectionRange.selectNodeContents(containerEl);
+// 		preSelectionRange.setEnd(range.startContainer, range.startOffset);
+// 		var start = preSelectionRange.toString().length;
+
+// 		return {
+// 				start: start,
+// 				end: start + range.toString().length
+// 		};
+// };
+
+// restoreSelection = function(containerEl, savedSel) {
+// 		var charIndex = 0, range = document.createRange();
+// 		range.setStart(containerEl, 0);
+// 		range.collapse(true);
+// 		var nodeStack = [containerEl], node, foundStart = false, stop = false;
+
+// 		while (!stop && (node = nodeStack.pop())) {
+// 				if (node.nodeType == 3) {
+// 						var nextCharIndex = charIndex + node.length;
+// 						if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
+// 								range.setStart(node, savedSel.start - charIndex);
+// 								foundStart = true;
+// 						}
+// 						if (foundStart && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
+// 								range.setEnd(node, savedSel.end - charIndex);
+// 								stop = true;
+// 						}
+// 						charIndex = nextCharIndex;
+// 				} else {
+// 						var i = node.childNodes.length;
+// 						while (i--) {
+// 								nodeStack.push(node.childNodes[i]);
+// 						}
+// 				}
+// 		}
+
+// 		var sel = window.getSelection();
+// 		sel.removeAllRanges();
+// 		sel.addRange(range);
+// }
 
 </script>
